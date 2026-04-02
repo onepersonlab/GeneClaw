@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ══ 三省六部总控台 · CSS 变量 ══ */
+/* ══ GeneClaw 基因分析多智能体总控台 · CSS 变量 ══ */
 :root {
   --bg: #07090f;
   --panel: #0f1219;

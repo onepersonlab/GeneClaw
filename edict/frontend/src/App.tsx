@@ -51,7 +51,7 @@ export default function App() {
       {/* ── Header ── */}
       <div className="hdr">
         <div>
-          <div className="logo">三省六部 · 总控台</div>
+          <div className="logo">GeneClaw · 基因分析多智能体总控台</div>
           <div className="sub-text">OpenClaw Sansheng-Liubu Dashboard</div>
         </div>
         <div className="hdr-r">

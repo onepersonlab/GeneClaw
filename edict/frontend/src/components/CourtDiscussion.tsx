@@ -18,7 +18,10 @@ import { api } from '../api';
 // ── 常量 ──
 
 const OFFICIAL_COLORS: Record<string, string> = {
-  taizi: '#e8a040', zhongshu: '#a07aff', menxia: '#6a9eff', shangshu: '#2ecc8a',
+  // 决策层
+taizi: '#e8a040', coordinator: '#e8a040', planner: '#a07aff', reviewer: '#6a9eff', dispatcher: '#2ecc8a',
+  // 执行层
+  data_engineer: '#ff6b6b', bioinfo_engineer: '#4ecdc4', clinical_expert: '#45b7d1', reporter_agent: '#96ceb4',
   libu: '#f5c842', hubu: '#ff9a6a', bingbu: '#ff5270', xingbu: '#cc4444',
   gongbu: '#44aaff', libu_hr: '#9b59b6',
 };
@@ -30,12 +33,16 @@ const EMOTION_EMOJI: Record<string, string> = {
 
 const COURT_POSITIONS: Record<string, { x: number; y: number }> = {
   // 左列
-  zhongshu: { x: 15, y: 25 }, menxia: { x: 15, y: 45 }, shangshu: { x: 15, y: 65 },
+  // 决策层
+  coordinator: { x: 15, y: 20 }, planner: { x: 15, y: 35 }, reviewer: { x: 15, y: 50 }, dispatcher: { x: 15, y: 65 },
+  // 执行层
+  data_engineer: { x: 50, y: 30 }, bioinfo_engineer: { x: 50, y: 45 }, clinical_expert: { x: 50, y: 60 }, reporter_agent: { x: 50, y: 75 },
   // 右列
   libu: { x: 85, y: 20 }, hubu: { x: 85, y: 35 }, bingbu: { x: 85, y: 50 },
   xingbu: { x: 85, y: 65 }, gongbu: { x: 85, y: 80 },
   // 中间
-  taizi: { x: 50, y: 20 }, libu_hr: { x: 50, y: 80 },
+  // 保留兼容性
+taizi: { x: 50, y: 20 },
 };
 
 interface CourtMessage {

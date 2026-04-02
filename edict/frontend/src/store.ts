@@ -1,5 +1,5 @@
 /**
- * Zustand Store — 三省六部看板状态管理
+ * Zustand Store — GeneClaw 基因分析多智能体看板状态管理
  * HTTP 5s 轮询，无 WebSocket
  */
 
@@ -101,17 +101,6 @@ export const TAB_DEFS: { key: TabKey; label: string; icon: string }[] = [
 // ── DEPTS for monitor ──
 
 export const DEPTS = [
-  { id: 'taizi',    label: '太子',   emoji: '🤴', role: '太子',     rank: '储君' },
-  { id: 'zhongshu', label: '中书省', emoji: '📜', role: '中书令',   rank: '正一品' },
-  { id: 'menxia',   label: '门下省', emoji: '🔍', role: '侍中',     rank: '正一品' },
-  { id: 'shangshu', label: '尚书省', emoji: '📮', role: '尚书令',   rank: '正一品' },
-  { id: 'libu',     label: '礼部',   emoji: '📝', role: '礼部尚书', rank: '正二品' },
-  { id: 'hubu',     label: '户部',   emoji: '💰', role: '户部尚书', rank: '正二品' },
-  { id: 'bingbu',   label: '兵部',   emoji: '⚔️', role: '兵部尚书', rank: '正二品' },
-  { id: 'xingbu',   label: '刑部',   emoji: '⚖️', role: '刑部尚书', rank: '正二品' },
-  { id: 'gongbu',   label: '工部',   emoji: '🔧', role: '工部尚书', rank: '正二品' },
-  { id: 'libu_hr',  label: '吏部',   emoji: '👔', role: '吏部尚书', rank: '正二品' },
-  { id: 'zaochao',  label: '钦天监', emoji: '📰', role: '朝报官',   rank: '正三品' },
 ];
 
 // ── Templates ──

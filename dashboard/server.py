@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-三省六部 · 看板本地 API 服务器
+GeneClaw · 基因分析多智能体看板 API 服务器
 Port: 7891 (可通过 --port 修改)
 
 Endpoints:
@@ -611,7 +611,7 @@ _JUNK_TITLES = {
 }
 
 
-def handle_create_task(title, org='中书省', official='中书令', priority='normal', template_id='', params=None, target_dept=''):
+def handle_create_task(title, org='规划智能体', official='规划智能体', priority='normal', template_id='', params=None, target_dept=''):
     """从看板创建新任务（圣旨模板下旨）。"""
     if not title or not title.strip():
         return {'ok': False, 'error': '任务标题不能为空'}
@@ -637,16 +637,16 @@ def handle_create_task(title, org='中书省', official='中书令', priority='n
         nums = [int(tid.split('-')[-1]) for tid in today_ids if tid.split('-')[-1].isdigit()]
         seq = max(nums) + 1 if nums else 1
     task_id = f'JJC-{today}-{seq:03d}'
-    # 正确流程起点：皇上 -> 太子分拣
-    # target_dept 记录模板建议的最终执行部门（仅供尚书省派发参考）
-    initial_org = '太子'
+    # 正确流程起点：用户 -> 协调智能体分拣
+    # target_dept 记录模板建议的最终执行部门（仅供参考）
+    initial_org = '协调智能体'
     new_task = {
         'id': task_id,
         'title': title,
         'official': official,
         'org': initial_org,
         'state': 'Taizi',
-        'now': '等待太子接旨分拣',
+        'now': '等待协调智能体分拣',
         'eta': '-',
         'block': '无',
         'output': '',
@@ -675,11 +675,11 @@ def handle_create_task(title, org='中书省', official='中书令', priority='n
 
     dispatch_for_state(task_id, new_task, 'Taizi', trigger='imperial-edict')
 
-    return {'ok': True, 'taskId': task_id, 'message': f'旨意 {task_id} 已下达，正在派发给太子'}
+    return {'ok': True, 'taskId': task_id, 'message': f'任务 {task_id} 已创建，正在派发给协调智能体'}
 
 
 def handle_review_action(task_id, action, comment=''):
-    """门下省御批：准奏/封驳。"""
+    """审议智能体审批：准奏/封驳。"""
     tasks = load_tasks()
     task = next((t for t in tasks if t.get('id') == task_id), None)
     if not task:
@@ -693,9 +693,9 @@ def handle_review_action(task_id, action, comment=''):
     if action == 'approve':
         if task['state'] == 'Menxia':
             task['state'] = 'Assigned'
-            task['now'] = '门下省准奏，移交尚书省派发'
-            remark = f'✅ 准奏：{comment or "门下省审议通过"}'
-            to_dept = '尚书省'
+            task['now'] = '审议智能体准奏，移交派发智能体派发'
+            remark = f'✅ 准奏：{comment or "审议智能体审议通过"}'
+            to_dept = '派发智能体'
         else:  # Review
             task['state'] = 'Done'
             task['now'] = '御批通过，任务完成'
@@ -705,15 +705,15 @@ def handle_review_action(task_id, action, comment=''):
         round_num = (task.get('review_round') or 0) + 1
         task['review_round'] = round_num
         task['state'] = 'Zhongshu'
-        task['now'] = f'封驳退回中书省修订（第{round_num}轮）'
+        task['now'] = f'封驳退回规划智能体修订（第{round_num}轮）'
         remark = f'🚫 封驳：{comment or "需要修改"}'
-        to_dept = '中书省'
+        to_dept = '规划智能体'
     else:
         return {'ok': False, 'error': f'未知操作: {action}'}
 
     task.setdefault('flow_log', []).append({
         'at': now_iso(),
-        'from': '门下省' if task.get('state') != 'Done' else '皇上',
+        'from': '审议智能体' if task.get('state') != 'Done' else '皇上',
         'to': to_dept,
         'remark': remark
     })
@@ -734,17 +734,16 @@ def handle_review_action(task_id, action, comment=''):
 # ══ Agent 在线状态检测 ══
 
 _AGENT_DEPTS = [
-    {'id':'taizi',   'label':'太子',  'emoji':'🤴', 'role':'太子',     'rank':'储君'},
-    {'id':'zhongshu','label':'中书省','emoji':'📜', 'role':'中书令',   'rank':'正一品'},
-    {'id':'menxia',  'label':'门下省','emoji':'🔍', 'role':'侍中',     'rank':'正一品'},
-    {'id':'shangshu','label':'尚书省','emoji':'📮', 'role':'尚书令',   'rank':'正一品'},
-    {'id':'hubu',    'label':'户部',  'emoji':'💰', 'role':'户部尚书', 'rank':'正二品'},
-    {'id':'libu',    'label':'礼部',  'emoji':'📝', 'role':'礼部尚书', 'rank':'正二品'},
-    {'id':'bingbu',  'label':'兵部',  'emoji':'⚔️', 'role':'兵部尚书', 'rank':'正二品'},
-    {'id':'xingbu',  'label':'刑部',  'emoji':'⚖️', 'role':'刑部尚书', 'rank':'正二品'},
-    {'id':'gongbu',  'label':'工部',  'emoji':'🔧', 'role':'工部尚书', 'rank':'正二品'},
-    {'id':'libu_hr', 'label':'吏部',  'emoji':'👔', 'role':'吏部尚书', 'rank':'正二品'},
-    {'id':'zaochao', 'label':'钦天监','emoji':'📰', 'role':'朝报官',   'rank':'正三品'},
+    # 决策层智能体
+    {'id':'coordinator',  'label':'协调智能体',  'emoji':'🎯', 'role':'入口分拣',   'tier':'决策层'},
+    {'id':'planner',      'label':'规划智能体',  'emoji':'📋', 'role':'方案设计',   'tier':'决策层'},
+    {'id':'reviewer',     'label':'审议智能体',  'emoji':'🔍', 'role':'质量把关',   'tier':'决策层'},
+    {'id':'dispatcher',   'label':'派发智能体',  'emoji':'📮', 'role':'任务调度',   'tier':'决策层'},
+    # 执行层智能体
+    {'id':'data_engineer',     'label':'数据工程师',  'emoji':'📊', 'role':'VCF解析质控',    'tier':'执行层'},
+    {'id':'bioinfo_engineer',  'label':'生信工程师',  'emoji':'🧬', 'role':'Genos分析',      'tier':'执行层'},
+    {'id':'clinical_expert',   'label':'临床智能体',  'emoji':'🏥', 'role':'数据库注释',     'tier':'执行层'},
+    {'id':'reporter_agent',    'label':'报告智能体',  'emoji':'📈', 'role':'结果输出',       'tier':'执行层'},
 ]
 
 
@@ -951,19 +950,19 @@ def wake_agent(agent_id, message=''):
 
 # 状态 → agent_id 映射
 _STATE_AGENT_MAP = {
-    'Taizi': 'taizi',
-    'Zhongshu': 'zhongshu',
-    'Menxia': 'menxia',
-    'Assigned': 'shangshu',
-    'Doing': None,         # 六部，需从 org 推断
-    'Review': 'shangshu',
-    'Next': None,          # 待执行，从 org 推断
-    'Pending': 'zhongshu', # 待处理，默认中书省
+    'Coordinator': 'coordinator',
+    'Planning': 'planner',
+    'Reviewing': 'reviewer',
+    'Approved': 'dispatcher',
+    'Dispatching': 'dispatcher',
+    'Executing': 'dispatcher',
+    'Aggregating': 'dispatcher',
+    'Pending': 'coordinator',
 }
 _ORG_AGENT_MAP = {
-    '礼部': 'libu', '户部': 'hubu', '兵部': 'bingbu',
-    '刑部': 'xingbu', '工部': 'gongbu', '吏部': 'libu_hr',
-    '中书省': 'zhongshu', '门下省': 'menxia', '尚书省': 'shangshu',
+    '协调智能体': 'coordinator', '规划智能体': 'planner', '审议智能体': 'reviewer',
+    '派发智能体': 'dispatcher', '数据工程师': 'data_engineer', '生信工程师': 'bioinfo_engineer',
+    '临床智能体': 'clinical_expert', '报告智能体': 'reporter_agent',
 }
 
 _TERMINAL_STATES = {'Done', 'Cancelled'}
@@ -1009,7 +1008,7 @@ def _ensure_scheduler(task):
 def _scheduler_add_flow(task, remark, to=''):
     task.setdefault('flow_log', []).append({
         'at': now_iso(),
-        'from': '太子调度',
+        'from': '协调智能体调度',
         'to': to or task.get('org', ''),
         'remark': f'🧭 {remark}'
     })
@@ -1083,12 +1082,12 @@ def handle_scheduler_retry(task_id, reason=''):
     sched = _ensure_scheduler(task)
     sched['retryCount'] = int(sched.get('retryCount') or 0) + 1
     sched['lastRetryAt'] = now_iso()
-    sched['lastDispatchTrigger'] = 'taizi-retry'
+    sched['lastDispatchTrigger'] = 'coordinator-retry'
     _scheduler_add_flow(task, f'触发重试第{sched["retryCount"]}次：{reason or "超时未推进"}')
     task['updatedAt'] = now_iso()
     save_tasks(tasks)
 
-    dispatch_for_state(task_id, task, state, trigger='taizi-retry')
+    dispatch_for_state(task_id, task, state, trigger='coordinator-retry')
     return {'ok': True, 'message': f'{task_id} 已触发重试派发', 'retryCount': sched['retryCount']}
 
 
@@ -1104,8 +1103,8 @@ def handle_scheduler_escalate(task_id, reason=''):
     sched = _ensure_scheduler(task)
     current_level = int(sched.get('escalationLevel') or 0)
     next_level = min(current_level + 1, 2)
-    target = 'menxia' if next_level == 1 else 'shangshu'
-    target_label = '门下省' if next_level == 1 else '尚书省'
+    target = 'reviewer' if next_level == 1 else 'dispatcher'
+    target_label = '审议智能体' if next_level == 1 else '派发智能体'
 
     sched['escalationLevel'] = next_level
     sched['lastEscalatedAt'] = now_iso()
@@ -1114,7 +1113,7 @@ def handle_scheduler_escalate(task_id, reason=''):
     save_tasks(tasks)
 
     msg = (
-        f'🧭 太子调度升级通知\n'
+        f'🧭 协调智能体调度升级通知\n'
         f'任务ID: {task_id}\n'
         f'当前状态: {state}\n'
         f'停滞处理: 请你介入协调推进\n'
@@ -1140,7 +1139,7 @@ def handle_scheduler_rollback(task_id, reason=''):
     old_state = task.get('state', '')
     task['state'] = snap_state
     task['org'] = snapshot.get('org', task.get('org', ''))
-    task['now'] = f'↩️ 太子调度自动回滚：{reason or "恢复到上个稳定节点"}'
+    task['now'] = f'↩️ 协调智能体自动回滚：{reason or "恢复到上个稳定节点"}'
     task['block'] = '无'
     sched['retryCount'] = 0
     sched['escalationLevel'] = 0
@@ -1151,7 +1150,7 @@ def handle_scheduler_rollback(task_id, reason=''):
     save_tasks(tasks)
 
     if snap_state not in _TERMINAL_STATES:
-        dispatch_for_state(task_id, task, snap_state, trigger='taizi-rollback')
+        dispatch_for_state(task_id, task, snap_state, trigger='coordinator-rollback')
 
     return {'ok': True, 'message': f'{task_id} 已回滚到 {snap_state}'}
 
@@ -1194,7 +1193,7 @@ def handle_scheduler_scan(threshold_sec=600):
         if retry_count < max_retry:
             sched['retryCount'] = retry_count + 1
             sched['lastRetryAt'] = now_iso()
-            sched['lastDispatchTrigger'] = 'taizi-scan-retry'
+            sched['lastDispatchTrigger'] = 'coordinator-scan-retry'
             _scheduler_add_flow(task, f'停滞{stalled_sec}秒，触发自动重试第{sched["retryCount"]}次')
             pending_retries.append((task_id, state))
             actions.append({'taskId': task_id, 'action': 'retry', 'stalledSec': stalled_sec})
@@ -1203,8 +1202,8 @@ def handle_scheduler_scan(threshold_sec=600):
 
         if level < 2:
             next_level = level + 1
-            target = 'menxia' if next_level == 1 else 'shangshu'
-            target_label = '门下省' if next_level == 1 else '尚书省'
+            target = 'reviewer' if next_level == 1 else 'dispatcher'
+            target_label = '审议智能体' if next_level == 1 else '派发智能体'
             sched['escalationLevel'] = next_level
             sched['lastEscalatedAt'] = now_iso()
             _scheduler_add_flow(task, f'停滞{stalled_sec}秒，升级至{target_label}协调', to=target_label)
@@ -1220,7 +1219,7 @@ def handle_scheduler_scan(threshold_sec=600):
                 old_state = state
                 task['state'] = snap_state
                 task['org'] = snapshot.get('org', task.get('org', ''))
-                task['now'] = '↩️ 太子调度自动回滚到稳定节点'
+                task['now'] = '↩️ 协调智能体自动回滚到稳定节点'
                 task['block'] = '无'
                 sched['retryCount'] = 0
                 sched['escalationLevel'] = 0
@@ -1237,11 +1236,11 @@ def handle_scheduler_scan(threshold_sec=600):
     for task_id, state in pending_retries:
         retry_task = next((t for t in tasks if t.get('id') == task_id), None)
         if retry_task:
-            dispatch_for_state(task_id, retry_task, state, trigger='taizi-scan-retry')
+            dispatch_for_state(task_id, retry_task, state, trigger='coordinator-scan-retry')
 
     for task_id, state, target, target_label, stalled_sec in pending_escalates:
         msg = (
-            f'🧭 太子调度升级通知\n'
+            f'🧭 协调智能体调度升级通知\n'
             f'任务ID: {task_id}\n'
             f'当前状态: {state}\n'
             f'已停滞: {stalled_sec} 秒\n'
@@ -1253,7 +1252,7 @@ def handle_scheduler_scan(threshold_sec=600):
     for task_id, state in pending_rollbacks:
         rollback_task = next((t for t in tasks if t.get('id') == task_id), None)
         if rollback_task and state not in _TERMINAL_STATES:
-            dispatch_for_state(task_id, rollback_task, state, trigger='taizi-auto-rollback')
+            dispatch_for_state(task_id, rollback_task, state, trigger='coordinator-auto-rollback')
 
     return {
         'ok': True,
@@ -1287,7 +1286,7 @@ def _startup_recover_queued_dispatches():
 
 
 def handle_repair_flow_order():
-    """修复历史任务中首条流转为“皇上->中书省”的错序问题。"""
+    """修复历史任务中首条流转的错序问题。"""
     tasks = load_tasks()
     fixed = 0
     fixed_ids = []
@@ -1301,18 +1300,18 @@ def handle_repair_flow_order():
             continue
 
         first = flow_log[0]
-        if first.get('from') != '皇上' or first.get('to') != '中书省':
+        if first.get('from') != '用户' or first.get('to') != '协调智能体':
             continue
 
-        first['to'] = '太子'
+        first['to'] = '协调智能体'
         remark = first.get('remark', '')
         if isinstance(remark, str) and remark.startswith('下旨：'):
             first['remark'] = remark
 
-        if task.get('state') == 'Zhongshu' and task.get('org') == '中书省' and len(flow_log) == 1:
+        if task.get('state') == 'Planning' and task.get('org') == '规划智能体' and len(flow_log) == 1:
             task['state'] = 'Taizi'
-            task['org'] = '太子'
-            task['now'] = '等待太子接旨分拣'
+            task['org'] = '协调智能体'
+            task['now'] = '等待协调智能体分拣'
 
         task['updatedAt'] = now_iso()
         fixed += 1
@@ -1959,18 +1958,18 @@ def get_task_activity(task_id):
 
 # 状态推进顺序（手动推进用）
 _STATE_FLOW = {
-    'Pending':  ('Taizi', '皇上', '太子', '待处理旨意转交太子分拣'),
-    'Taizi':    ('Zhongshu', '太子', '中书省', '太子分拣完毕，转中书省起草'),
-    'Zhongshu': ('Menxia', '中书省', '门下省', '中书省方案提交门下省审议'),
-    'Menxia':   ('Assigned', '门下省', '尚书省', '门下省准奏，转尚书省派发'),
-    'Assigned': ('Doing', '尚书省', '六部', '尚书省开始派发执行'),
-    'Next':     ('Doing', '尚书省', '六部', '待执行任务开始执行'),
-    'Doing':    ('Review', '六部', '尚书省', '各部完成，进入汇总'),
-    'Review':   ('Done', '尚书省', '太子', '全流程完成，回奏太子转报皇上'),
+    'Pending':     ('Coordinator', '用户', '协调智能体', '用户请求转交协调智能体分拣'),
+    'Coordinator': ('Planning', '协调智能体', '规划智能体', '协调智能体分拣完毕，转规划智能体设计方案'),
+    'Planning':    ('Reviewing', '规划智能体', '审议智能体', '规划智能体方案提交审议智能体审核'),
+    'Reviewing':   ('Approved', '审议智能体', '派发智能体', '审议智能体准奏，转派发智能体调度'),
+    'Approved':    ('Dispatching', '派发智能体', '执行层', '派发智能体开始派发执行'),
+    'Dispatching': ('Executing', '派发智能体', '执行层', '任务派发中'),
+    'Executing':   ('Aggregating', '执行层', '派发智能体', '执行完成，进入汇总'),
+    'Aggregating': ('Done', '派发智能体', '协调智能体', '全流程完成，回奏用户'),
 }
 _STATE_LABELS = {
-    'Pending': '待处理', 'Taizi': '太子', 'Zhongshu': '中书省', 'Menxia': '门下省',
-    'Assigned': '尚书省', 'Next': '待执行', 'Doing': '执行中', 'Review': '审查', 'Done': '完成',
+    'Pending': '待处理', 'Coordinator': '协调中', 'Planning': '规划中', 'Reviewing': '审议中',
+    'Approved': '已批准', 'Dispatching': '派发中', 'Executing': '执行中', 'Aggregating': '汇总中', 'Done': '完成',
 }
 
 
@@ -1999,34 +1998,29 @@ def dispatch_for_state(task_id, task, new_state, trigger='state-transition'):
 
     # 根据 agent_id 构造针对性消息
     _msgs = {
-        'taizi': (
-            f'📜 皇上旨意需要你处理\n'
+        'coordinator': (
+            f'🎯 用户请求需要你处理\n'
             f'任务ID: {task_id}\n'
-            f'旨意: {title}\n'
-            f'⚠️ 看板已有此任务，请勿重复创建。直接用 kanban_update.py 更新状态。\n'
-            f'请立即转交中书省起草执行方案。'
+            f'标题: {title}\n'
+            f'请分析用户意图，判断是遍寻模式还是定向模式，然后转交规划智能体设计方案。'
         ),
-        'zhongshu': (
-            f'📜 旨意已到中书省，请起草方案\n'
+        'planner': (
+            f'📋 协调智能体已分拣，请设计方案\n'
             f'任务ID: {task_id}\n'
-            f'旨意: {title}\n'
-            f'⚠️ 看板已有此任务记录，请勿重复创建。直接用 kanban_update.py state 更新状态。\n'
-            f'请立即起草执行方案，走完完整三省流程（中书起草→门下审议→尚书派发→六部执行）。'
+            f'标题: {title}\n'
+            f'请设计分析方案，选择合适的 Genos API 和参数配置。'
         ),
-        'menxia': (
-            f'📋 中书省方案提交审议\n'
+        'reviewer': (
+            f'🔍 规划智能体方案提交审议\n'
             f'任务ID: {task_id}\n'
-            f'旨意: {title}\n'
-            f'⚠️ 看板已有此任务，请勿重复创建。\n'
-            f'请审议中书省方案，给出准奏或封驳意见。'
+            f'标题: {title}\n'
+            f'请审议方案，给出准奏或封驳意见。'
         ),
-        'shangshu': (
-            f'📮 门下省已准奏，请派发执行\n'
+        'dispatcher': (
+            f'📮 审议智能体已准奏，请派发执行\n'
             f'任务ID: {task_id}\n'
-            f'旨意: {title}\n'
-            f'{"建议派发部门: " + target_dept if target_dept else ""}\n'
-            f'⚠️ 看板已有此任务，请勿重复创建。\n'
-            f'请分析方案并派发给六部执行。'
+            f'标题: {title}\n'
+            f'请派发给执行层智能体处理。'
         ),
     }
     msg = _msgs.get(agent_id, (
@@ -2537,7 +2531,7 @@ class Handler(BaseHTTPRequestHandler):
 
         if p == '/api/create-task':
             title = body.get('title', '').strip()
-            org = body.get('org', '中书省').strip()
+            org = body.get('org', '规划智能体').strip()
             official = body.get('official', '中书令').strip()
             priority = body.get('priority', 'normal').strip()
             template_id = body.get('templateId', '')
@@ -2666,7 +2660,7 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='三省六部看板服务器')
+    parser = argparse.ArgumentParser(description='GeneClaw 基因分析多智能体看板服务器')
     parser.add_argument('--port', type=int, default=7891)
     parser.add_argument('--host', default='127.0.0.1')
     parser.add_argument('--cors', default=None, help='Allowed CORS origin (default: reflect request Origin header)')
@@ -2680,7 +2674,7 @@ def main():
     }
 
     server = HTTPServer((args.host, args.port), Handler)
-    log.info(f'三省六部看板启动 → http://{args.host}:{args.port}')
+    log.info(f'GeneClaw 看板启动 → http://{args.host}:{args.port}')
     print(f'   按 Ctrl+C 停止')
 
     migrate_notification_config()

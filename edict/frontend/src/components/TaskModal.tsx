@@ -12,9 +12,9 @@ import type {
 
 const AGENT_LABELS: Record<string, string> = {
   main: '太子',
-  zhongshu: '中书省',
-  menxia: '门下省',
-  shangshu: '尚书省',
+  coordinator: '协调智能体',
+  planner: '规划智能体',
+  reviewer: '审议智能体',
   libu: '礼部',
   hubu: '户部',
   bingbu: '兵部',
