@@ -14,7 +14,7 @@
 
 如果你发现了安全问题，请通过以下方式私密报告：
 
-1. **首选方式**：使用 [GitHub Security Advisories](https://github.com/cft0808/edict/security/advisories/new) 创建私密安全报告
+1. **首选方式**：使用 [GitHub Security Advisories](https://github.com/onepersonlab/GeneClaw/security/advisories/new) 创建私密安全报告
 2. **备选方式**：发送邮件至维护者（请在 GitHub Profile 中获取联系方式）
 
 ### 报告应包含
