@@ -21,12 +21,23 @@ scripts_dir = str(pathlib.Path(__file__).parent.parent / 'scripts')
 sys.path.insert(0, scripts_dir)
 from file_lock import atomic_json_read, atomic_json_write, atomic_json_update
 from utils import validate_url, read_json, now_iso
-from court_discuss import (
-    create_session as cd_create, advance_discussion as cd_advance,
-    get_session as cd_get, conclude_session as cd_conclude,
-    list_sessions as cd_list, destroy_session as cd_destroy,
-    get_fate_event as cd_fate, OFFICIAL_PROFILES as CD_PROFILES,
-)
+# 禁用朝堂议政功能
+# from court_discuss import (
+#     create_session as cd_create, advance_discussion as cd_advance,
+#     get_session as cd_get, conclude_session as cd_conclude,
+#     list_sessions as cd_list, destroy_session as cd_destroy,
+#     get_fate_event as cd_fate, OFFICIAL_PROFILES as CD_PROFILES,
+# )
+
+# 占位函数（禁用后返回空数据）
+def cd_list(): return []
+def cd_get(sid): return None
+def cd_fate(): return {}
+def cd_create(topic, officials, task_id): return {'ok': False, 'error': 'Court discuss disabled'}
+def cd_advance(sid, user_msg, decree): return {'ok': False, 'error': 'Court discuss disabled'}
+def cd_conclude(sid): return {'ok': False, 'error': 'Court discuss disabled'}
+def cd_destroy(sid): return {'ok': False, 'error': 'Court discuss disabled'}
+CD_PROFILES = {}
 
 log = logging.getLogger('server')
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(name)s] %(message)s', datefmt='%H:%M:%S')

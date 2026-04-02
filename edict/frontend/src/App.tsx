@@ -82,7 +82,8 @@ export default function App() {
 
       {/* ── Panels ── */}
       {activeTab === 'edicts' && <EdictBoard />}
-      {activeTab === 'court' && <CourtDiscussion />}
+      {/* 朝堂议政功能已禁用 */}
+          {/* activeTab === 'court' && <CourtDiscussion /> */}
       {activeTab === 'monitor' && <MonitorPanel />}
       {activeTab === 'officials' && <OfficialPanel />}
       {activeTab === 'models' && <ModelConfig />}
