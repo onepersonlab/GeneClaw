@@ -1,101 +1,184 @@
-[
-  {
-    "id": "taizi",
-    "name": "taizi",
-    "workspace": "C:\\Users\\<YOUR_USER>\\.openclaw\\workspace-taizi",
-    "agentDir": "C:\\Users\\<YOUR_USER>\\.openclaw\\agents\\taizi\\agent",
-    "subagents": {
-      "allowAgents": ["zhongshu"]
+{
+  "agents": [
+    {
+      "id": "coordinator",
+      "label": "协调智能体",
+      "description": "入口分拣、意图识别、任务创建、结果回奏",
+      "tier": "decision",
+      "allowAgents": ["planner"],
+      "tools": ["kanban_cli", "session_send"],
+      "skills": ["intent-recognition"],
+      "soul": "agents/coordinator/SOUL.md"
+    },
+    {
+      "id": "planner",
+      "label": "规划智能体",
+      "description": "分析方案设计、API选择、数据流规划",
+      "tier": "decision",
+      "allowAgents": ["reviewer", "dispatcher"],
+      "tools": ["kanban_cli"],
+      "skills": ["analysis-design"],
+      "soul": "agents/planner/SOUL.md"
+    },
+    {
+      "id": "reviewer",
+      "label": "审议智能体",
+      "description": "方案审核、质量把关、可封驳",
+      "tier": "decision",
+      "allowAgents": ["planner", "dispatcher"],
+      "tools": ["kanban_cli"],
+      "skills": ["plan-review"],
+      "soul": "agents/reviewer/SOUL.md"
+    },
+    {
+      "id": "dispatcher",
+      "label": "派发智能体",
+      "description": "任务调度、执行监控、结果汇总",
+      "tier": "decision",
+      "allowAgents": ["data_engineer", "bioinfo_engineer", "clinical_expert", "reporter_agent"],
+      "tools": ["kanban_cli", "session_spawn"],
+      "skills": ["task-dispatch"],
+      "soul": "agents/dispatcher/SOUL.md"
+    },
+    {
+      "id": "data_engineer",
+      "label": "数据工程师",
+      "description": "VCF解析、质量控制、变异提取",
+      "tier": "execution",
+      "allowAgents": [],
+      "tools": ["pysam", "pyfaidx", "bcftools"],
+      "skills": ["vcf-parser", "quality-control"],
+      "soul": "agents/data_engineer/SOUL.md"
+    },
+    {
+      "id": "bioinfo_engineer",
+      "label": "生信工程师",
+      "description": "Genos API调用、变异预测、致病性评分",
+      "tier": "execution",
+      "allowAgents": [],
+      "tools": ["genos_client"],
+      "skills": ["genos-api", "batch-prediction"],
+      "soul": "agents/bioinfo_engineer/SOUL.md"
+    },
+    {
+      "id": "clinical_expert",
+      "label": "临床智能体",
+      "description": "ClinVar/OMIM/gnomAD注释、临床意义增强",
+      "tier": "execution",
+      "allowAgents": [],
+      "tools": ["clinvar_api", "omim_api", "gnomad_api"],
+      "skills": ["database-annotation"],
+      "soul": "agents/clinical_expert/SOUL.md"
+    },
+    {
+      "id": "reporter_agent",
+      "label": "报告智能体",
+      "description": "结果排序、图表生成、报告导出",
+      "tier": "execution",
+      "allowAgents": [],
+      "tools": ["echarts", "report_generator"],
+      "skills": ["visualization", "report-export"],
+      "soul": "agents/reporter_agent/SOUL.md"
+    }
+  ],
+  "permissions": {
+    "matrix": {
+      "coordinator": {
+        "planner": "allow",
+        "reviewer": "deny",
+        "dispatcher": "deny",
+        "data_engineer": "deny",
+        "bioinfo_engineer": "deny",
+        "clinical_expert": "deny",
+        "reporter_agent": "deny"
+      },
+      "planner": {
+        "coordinator": "deny",
+        "reviewer": "allow",
+        "dispatcher": "consult",
+        "data_engineer": "deny",
+        "bioinfo_engineer": "deny",
+        "clinical_expert": "deny",
+        "reporter_agent": "deny"
+      },
+      "reviewer": {
+        "coordinator": "deny",
+        "planner": "allow",
+        "dispatcher": "allow",
+        "data_engineer": "deny",
+        "bioinfo_engineer": "deny",
+        "clinical_expert": "deny",
+        "reporter_agent": "deny"
+      },
+      "dispatcher": {
+        "coordinator": "deny",
+        "planner": "deny",
+        "reviewer": "deny",
+        "data_engineer": "allow",
+        "bioinfo_engineer": "allow",
+        "clinical_expert": "allow",
+        "reporter_agent": "allow"
+      },
+      "data_engineer": {
+        "coordinator": "deny",
+        "planner": "deny",
+        "reviewer": "deny",
+        "dispatcher": "deny",
+        "bioinfo_engineer": "deny",
+        "clinical_expert": "deny",
+        "reporter_agent": "deny"
+      },
+      "bioinfo_engineer": {
+        "coordinator": "deny",
+        "planner": "deny",
+        "reviewer": "deny",
+        "dispatcher": "deny",
+        "data_engineer": "deny",
+        "clinical_expert": "deny",
+        "reporter_agent": "deny"
+      },
+      "clinical_expert": {
+        "coordinator": "deny",
+        "planner": "deny",
+        "reviewer": "deny",
+        "dispatcher": "deny",
+        "data_engineer": "deny",
+        "bioinfo_engineer": "deny",
+        "reporter_agent": "deny"
+      },
+      "reporter_agent": {
+        "coordinator": "deny",
+        "planner": "deny",
+        "reviewer": "deny",
+        "dispatcher": "deny",
+        "data_engineer": "deny",
+        "bioinfo_engineer": "deny",
+        "clinical_expert": "deny"
+      }
     }
   },
-  {
-    "id": "zhongshu",
-    "name": "zhongshu",
-    "workspace": "C:\\Users\\<YOUR_USER>\\.openclaw\\workspace-zhongshu",
-    "agentDir": "C:\\Users\\<YOUR_USER>\\.openclaw\\agents\\zhongshu\\agent",
-    "subagents": {
-      "allowAgents": ["menxia", "shangshu"]
-    }
+  "stateTransitions": {
+    "Pending": ["Coordinator"],
+    "Coordinator": ["Planning"],
+    "Planning": ["Reviewing"],
+    "Reviewing": ["Approved", "Rejected"],
+    "Rejected": ["Planning"],
+    "Approved": ["Dispatching"],
+    "Dispatching": ["Executing"],
+    "Executing": ["Aggregating"],
+    "Aggregating": ["Done"],
+    "Done": [],
+    "Cancelled": []
   },
-  {
-    "id": "menxia",
-    "name": "menxia",
-    "workspace": "C:\\Users\\<YOUR_USER>\\.openclaw\\workspace-menxia",
-    "agentDir": "C:\\Users\\<YOUR_USER>\\.openclaw\\agents\\menxia\\agent",
-    "subagents": {
-      "allowAgents": ["shangshu", "zhongshu"]
-    }
+  "schedulerConfig": {
+    "stallThresholdSec": 180,
+    "maxRetry": 2,
+    "maxReviewRounds": 3,
+    "retryBackoff": [5, 15, 30]
   },
-  {
-    "id": "shangshu",
-    "name": "shangshu",
-    "workspace": "C:\\Users\\<YOUR_USER>\\.openclaw\\workspace-shangshu",
-    "agentDir": "C:\\Users\\<YOUR_USER>\\.openclaw\\agents\\shangshu\\agent",
-    "subagents": {
-      "allowAgents": ["zhongshu", "menxia", "hubu", "libu", "bingbu", "xingbu", "gongbu", "libu_hr"]
-    }
-  },
-  {
-    "id": "hubu",
-    "name": "hubu",
-    "workspace": "C:\\Users\\<YOUR_USER>\\.openclaw\\workspace-hubu",
-    "agentDir": "C:\\Users\\<YOUR_USER>\\.openclaw\\agents\\hubu\\agent",
-    "subagents": {
-      "allowAgents": ["shangshu"]
-    }
-  },
-  {
-    "id": "libu",
-    "name": "libu",
-    "workspace": "C:\\Users\\<YOUR_USER>\\.openclaw\\workspace-libu",
-    "agentDir": "C:\\Users\\<YOUR_USER>\\.openclaw\\agents\\libu\\agent",
-    "subagents": {
-      "allowAgents": ["shangshu"]
-    }
-  },
-  {
-    "id": "bingbu",
-    "name": "bingbu",
-    "workspace": "C:\\Users\\<YOUR_USER>\\.openclaw\\workspace-bingbu",
-    "agentDir": "C:\\Users\\<YOUR_USER>\\.openclaw\\agents\\bingbu\\agent",
-    "subagents": {
-      "allowAgents": ["shangshu"]
-    }
-  },
-  {
-    "id": "xingbu",
-    "name": "xingbu",
-    "workspace": "C:\\Users\\<YOUR_USER>\\.openclaw\\workspace-xingbu",
-    "agentDir": "C:\\Users\\<YOUR_USER>\\.openclaw\\agents\\xingbu\\agent",
-    "subagents": {
-      "allowAgents": ["shangshu"]
-    }
-  },
-  {
-    "id": "gongbu",
-    "name": "gongbu",
-    "workspace": "C:\\Users\\<YOUR_USER>\\.openclaw\\workspace-gongbu",
-    "agentDir": "C:\\Users\\<YOUR_USER>\\.openclaw\\agents\\gongbu\\agent",
-    "subagents": {
-      "allowAgents": ["shangshu"]
-    }
-  },
-  {
-    "id": "libu_hr",
-    "name": "libu_hr",
-    "workspace": "C:\\Users\\<YOUR_USER>\\.openclaw\\workspace-libu_hr",
-    "agentDir": "C:\\Users\\<YOUR_USER>\\.openclaw\\agents\\libu_hr\\agent",
-    "subagents": {
-      "allowAgents": ["shangshu"]
-    }
-  },
-  {
-    "id": "zaochao",
-    "name": "zaochao",
-    "workspace": "C:\\Users\\<YOUR_USER>\\.openclaw\\workspace-zaochao",
-    "agentDir": "C:\\Users\\<YOUR_USER>\\.openclaw\\agents\\zaochao\\agent",
-    "subagents": {
-      "allowAgents": []
-    }
+  "project": {
+    "name": "GeneClaw",
+    "version": "1.0.0",
+    "description": "基因分析多智能体框架"
   }
-]
+}
