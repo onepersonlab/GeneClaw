@@ -23,17 +23,16 @@ MODEL_PRICING = {
 }
 
 OFFICIALS = [
-    {'id':'taizi',   'label':'太子',  'role':'太子',    'emoji':'🤴','rank':'储君'},
-    {'id':'zhongshu','label':'中书省','role':'中书令',  'emoji':'📜','rank':'正一品'},
-    {'id':'menxia',  'label':'门下省','role':'侍中',    'emoji':'🔍','rank':'正一品'},
-    {'id':'shangshu','label':'尚书省','role':'尚书令',  'emoji':'📮','rank':'正一品'},
-    {'id':'libu',    'label':'礼部',  'role':'礼部尚书','emoji':'📝','rank':'正二品'},
-    {'id':'hubu',    'label':'户部',  'role':'户部尚书','emoji':'💰','rank':'正二品'},
-    {'id':'bingbu',  'label':'兵部',  'role':'兵部尚书','emoji':'⚔️','rank':'正二品'},
-    {'id':'xingbu',  'label':'刑部',  'role':'刑部尚书','emoji':'⚖️','rank':'正二品'},
-    {'id':'gongbu',  'label':'工部',  'role':'工部尚书','emoji':'🔧','rank':'正二品'},
-    {'id':'libu_hr', 'label':'吏部',  'role':'吏部尚书','emoji':'👔','rank':'正二品'},
-    {'id':'zaochao', 'label':'钦天监','role':'朝报官',  'emoji':'📰','rank':'正三品'},
+    # 决策层
+    {'id':'coordinator', 'label':'协调智能体', 'role':'入口分拣',  'emoji':'🎯','tier':'决策层'},
+    {'id':'planner',     'label':'规划智能体', 'role':'方案设计',  'emoji':'📋','tier':'决策层'},
+    {'id':'reviewer',    'label':'审议智能体', 'role':'质量把关',  'emoji':'🔍','tier':'决策层'},
+    {'id':'dispatcher',  'label':'派发智能体', 'role':'任务调度',  'emoji':'📮','tier':'决策层'},
+    # 执行层
+    {'id':'data_engineer',    'label':'数据工程师', 'role':'VCF解析质控', 'emoji':'📊','tier':'执行层'},
+    {'id':'bioinfo_engineer', 'label':'生信工程师', 'role':'Genos分析',   'emoji':'🧬','tier':'执行层'},
+    {'id':'clinical_expert',  'label':'临床智能体', 'role':'数据库注释',  'emoji':'🏥','tier':'执行层'},
+    {'id':'reporter_agent',   'label':'报告智能体', 'role':'结果输出',    'emoji':'📈','tier':'执行层'},
 ]
 
 def rj(p, d):
@@ -66,18 +65,11 @@ def get_model(agent_id):
     for a in cfg.get('agents',{}).get('list',[]):
         if a.get('id') == agent_id:
             return normalize_model(a.get('model', default), default)
-    # 兼容历史：太子曾使用 main 作为运行时 id
-    if agent_id == 'taizi':
-        for a in cfg.get('agents',{}).get('list',[]):
-            if a.get('id') == 'main':
-                return normalize_model(a.get('model', default), default)
     return default
 
 def scan_agent(agent_id):
     """从 sessions.json 读取 token 统计（累计所有 session）"""
     sj = AGENTS_ROOT / agent_id / 'sessions' / 'sessions.json'
-    if not sj.exists() and agent_id == 'taizi':
-        sj = AGENTS_ROOT / 'main' / 'sessions' / 'sessions.json'
     if not sj.exists():
         return {'tokens_in':0,'tokens_out':0,'cache_read':0,'cache_write':0,'sessions':0,'last_active':None,'messages':0}
     

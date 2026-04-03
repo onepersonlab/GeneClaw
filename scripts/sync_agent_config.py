@@ -15,18 +15,16 @@ DATA = BASE / 'data'
 OPENCLAW_CFG = pathlib.Path.home() / '.openclaw' / 'openclaw.json'
 
 ID_LABEL = {
-    'taizi':    {'label': '太子',   'role': '太子',     'duty': '飞书消息分拣与回奏',  'emoji': '🤴'},
-    'main':     {'label': '太子',   'role': '太子',     'duty': '飞书消息分拣与回奏',  'emoji': '🤴'},  # 兼容旧配置
-    'zhongshu': {'label': '中书省', 'role': '中书令',   'duty': '起草任务令与优先级',  'emoji': '📜'},
-    'menxia':   {'label': '门下省', 'role': '侍中',     'duty': '审议与退回机制',      'emoji': '🔍'},
-    'shangshu': {'label': '尚书省', 'role': '尚书令',   'duty': '派单与升级裁决',      'emoji': '📮'},
-    'libu':     {'label': '礼部',   'role': '礼部尚书', 'duty': '文档/汇报/规范',      'emoji': '📝'},
-    'hubu':     {'label': '户部',   'role': '户部尚书', 'duty': '资源/预算/成本',      'emoji': '💰'},
-    'bingbu':   {'label': '兵部',   'role': '兵部尚书', 'duty': '工程实现与架构设计',  'emoji': '⚔️'},
-    'xingbu':   {'label': '刑部',   'role': '刑部尚书', 'duty': '合规/审计/红线',      'emoji': '⚖️'},
-    'gongbu':   {'label': '工部',   'role': '工部尚书', 'duty': '基础设施与部署运维',  'emoji': '🔧'},
-    'libu_hr':  {'label': '吏部',   'role': '吏部尚书', 'duty': '人事/培训/Agent管理',  'emoji': '👔'},
-    'zaochao':  {'label': '钦天监', 'role': '朝报官',   'duty': '每日新闻采集与简报',  'emoji': '📰'},
+    # 决策层
+    'coordinator':  {'label': '协调智能体', 'role': '入口分拣', 'duty': '意图识别与任务分拣',  'emoji': '🎯'},
+    'planner':      {'label': '规划智能体', 'role': '方案设计', 'duty': '分析方案设计与API选择',  'emoji': '📋'},
+    'reviewer':     {'label': '审议智能体', 'role': '质量把关', 'duty': '方案审核与封驳',  'emoji': '🔍'},
+    'dispatcher':   {'label': '派发智能体', 'role': '任务调度', 'duty': '任务派发与结果汇总',  'emoji': '📮'},
+    # 执行层
+    'data_engineer':     {'label': '数据工程师', 'role': 'VCF解析质控', 'duty': 'VCF解析与质量控制',  'emoji': '📊'},
+    'bioinfo_engineer':  {'label': '生信工程师', 'role': 'Genos分析',   'duty': 'Genos API调用与变异预测',  'emoji': '🧬'},
+    'clinical_expert':   {'label': '临床智能体', 'role': '数据库注释',  'duty': 'ClinVar/gnomAD/OMIM注释',  'emoji': '🏥'},
+    'reporter_agent':    {'label': '报告智能体', 'role': '结果输出',    'duty': '结果排序与报告生成',  'emoji': '📈'},
 }
 
 KNOWN_MODELS = [
@@ -153,16 +151,24 @@ def main():
         })
         seen_ids.add(ag_id)
 
-    # 补充不在 openclaw.json agents list 中的 agent（兼容旧版 main）
+    # 补充不在 openclaw.json agents list 中的 agent
     EXTRA_AGENTS = {
-        'taizi':   {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-taizi'),
-                    'allowAgents': ['zhongshu']},
-        'main':    {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-main'),
-                    'allowAgents': ['zhongshu','menxia','shangshu','hubu','libu','bingbu','xingbu','gongbu','libu_hr']},
-        'zaochao': {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-zaochao'),
-                    'allowAgents': []},
-        'libu_hr': {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-libu_hr'),
-                    'allowAgents': ['shangshu']},
+        'coordinator':  {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-coordinator'),
+                        'allowAgents': ['planner', 'reviewer', 'dispatcher']},
+        'planner':      {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-planner'),
+                        'allowAgents': ['reviewer', 'coordinator']},
+        'reviewer':     {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-reviewer'),
+                        'allowAgents': ['dispatcher', 'planner', 'coordinator']},
+        'dispatcher':   {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-dispatcher'),
+                        'allowAgents': ['data_engineer', 'bioinfo_engineer', 'clinical_expert', 'reporter_agent', 'reviewer']},
+        'data_engineer':     {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-data_engineer'),
+                             'allowAgents': ['dispatcher', 'bioinfo_engineer']},
+        'bioinfo_engineer':  {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-bioinfo_engineer'),
+                             'allowAgents': ['dispatcher', 'clinical_expert']},
+        'clinical_expert':   {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-clinical_expert'),
+                             'allowAgents': ['dispatcher', 'reporter_agent']},
+        'reporter_agent':    {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-reporter_agent'),
+                             'allowAgents': ['dispatcher']},
     }
     for ag_id, extra in EXTRA_AGENTS.items():
         if ag_id in seen_ids or ag_id not in ID_LABEL:
@@ -207,17 +213,14 @@ def main():
 
 # 项目 agents/ 目录名 → 运行时 agent_id 映射
 _SOUL_DEPLOY_MAP = {
-    'taizi': 'taizi',
-    'zhongshu': 'zhongshu',
-    'menxia': 'menxia',
-    'shangshu': 'shangshu',
-    'libu': 'libu',
-    'hubu': 'hubu',
-    'bingbu': 'bingbu',
-    'xingbu': 'xingbu',
-    'gongbu': 'gongbu',
-    'libu_hr': 'libu_hr',
-    'zaochao': 'zaochao',
+    'coordinator': 'coordinator',
+    'planner': 'planner',
+    'reviewer': 'reviewer',
+    'dispatcher': 'dispatcher',
+    'data_engineer': 'data_engineer',
+    'bioinfo_engineer': 'bioinfo_engineer',
+    'clinical_expert': 'clinical_expert',
+    'reporter_agent': 'reporter_agent',
 }
 
 def _sync_script_symlink(src_file: pathlib.Path, dst_file: pathlib.Path) -> bool:
@@ -276,18 +279,6 @@ def sync_scripts_to_workspaces():
                     synced += 1
             except Exception:
                 continue
-    # also sync to workspace-main for legacy compatibility
-    ws_main_scripts = pathlib.Path.home() / '.openclaw/workspace-main/scripts'
-    ws_main_scripts.mkdir(parents=True, exist_ok=True)
-    for src_file in scripts_src.iterdir():
-        if src_file.suffix not in ('.py', '.sh') or src_file.stem.startswith('__'):
-            continue
-        dst_file = ws_main_scripts / src_file.name
-        try:
-            if _sync_script_symlink(src_file, dst_file):
-                synced += 1
-        except Exception:
-            pass
     if synced:
         log.info(f'{synced} script symlinks synced to workspaces')
 
@@ -311,16 +302,6 @@ def deploy_soul_files():
         if src_text != dst_text:
             ws_dst.write_text(src_text, encoding='utf-8')
             deployed += 1
-        # 太子兼容：同步一份到 legacy main agent 目录
-        if runtime_id == 'taizi':
-            ag_dst = pathlib.Path.home() / '.openclaw/agents/main/SOUL.md'
-            ag_dst.parent.mkdir(parents=True, exist_ok=True)
-            try:
-                ag_text = ag_dst.read_text(encoding='utf-8', errors='ignore')
-            except FileNotFoundError:
-                ag_text = ''
-            if src_text != ag_text:
-                ag_dst.write_text(src_text, encoding='utf-8')
         # 确保 sessions 目录存在
         sess_dir = pathlib.Path.home() / f'.openclaw/agents/{runtime_id}/sessions'
         sess_dir.mkdir(parents=True, exist_ok=True)

@@ -10,24 +10,24 @@
 两种模式互相独立，数据不会自动同步。
 
 用法:
-  # 新建任务（收旨时）
-  python3 kanban_update.py create JJC-20260223-012 "任务标题" Zhongshu 中书省 中书令
+  # 新建任务
+  python3 kanban_update.py create GC-20260223-012 "任务标题" Coordinator 协调智能体 协调智能体
 
   # 更新状态
-  python3 kanban_update.py state JJC-20260223-012 Menxia "规划方案已提交门下省"
+  python3 kanban_update.py state GC-20260223-012 Planning "方案已提交规划智能体"
 
   # 添加流转记录
-  python3 kanban_update.py flow JJC-20260223-012 "中书省" "门下省" "规划方案提交审核"
+  python3 kanban_update.py flow GC-20260223-012 "协调智能体" "规划智能体" "分拣完毕转规划"
 
   # 完成任务
-  python3 kanban_update.py done JJC-20260223-012 "/path/to/output" "任务完成摘要"
+  python3 kanban_update.py done GC-20260223-012 "/path/to/output" "任务完成摘要"
 
   # 添加/更新子任务 todo
-  python3 kanban_update.py todo JJC-20260223-012 1 "实现API接口" in-progress
-  python3 kanban_update.py todo JJC-20260223-012 1 "" completed
+  python3 kanban_update.py todo GC-20260223-012 1 "实现API接口" in-progress
+  python3 kanban_update.py todo GC-20260223-012 1 "" completed
 
   # 🔥 实时进展汇报（Agent 主动调用，频率不限）
-  python3 kanban_update.py progress JJC-20260223-012 "正在分析需求，拟定3个子方案" "1.调研技术选型|2.撰写设计文档|3.实现原型"
+  python3 kanban_update.py progress GC-20260223-012 "正在分析需求，拟定3个子方案" "1.调研技术选型|2.撰写设计文档|3.实现原型"
 """
 import datetime
 import json, pathlib, sys, subprocess, logging, os, re
@@ -44,31 +44,34 @@ from file_lock import atomic_json_read, atomic_json_update  # noqa: E402
 from utils import now_iso  # noqa: E402
 
 STATE_ORG_MAP = {
-    'Taizi': '太子', 'Zhongshu': '中书省', 'Menxia': '门下省',
-    'Assigned': '尚书省', 'Next': '尚书省',
-    'Doing': '执行中', 'Review': '尚书省', 'Done': '完成', 'Blocked': '阻塞',
+    'Coordinator': '协调智能体', 'Planning': '规划智能体', 'Reviewing': '审议智能体',
+    'Approved': '派发智能体', 'Dispatching': '派发智能体',
+    'Executing': '执行层', 'Aggregating': '派发智能体', 'Done': '完成', 'Blocked': '阻塞',
 }
 
 _STATE_AGENT_MAP = {
-    'Taizi': 'taizi',
-    'Zhongshu': 'zhongshu',
-    'Menxia': 'menxia',
-    'Assigned': 'shangshu',
-    'Review': 'shangshu',
-    'Pending': 'zhongshu',
+    'Coordinator': 'coordinator',
+    'Planning': 'planner',
+    'Reviewing': 'reviewer',
+    'Approved': 'dispatcher',
+    'Dispatching': 'dispatcher',
+    'Executing': 'dispatcher',
+    'Aggregating': 'dispatcher',
+    'Pending': 'coordinator',
 }
 
 _ORG_AGENT_MAP = {
-    '礼部': 'libu', '户部': 'hubu', '兵部': 'bingbu',
-    '刑部': 'xingbu', '工部': 'gongbu', '吏部': 'libu_hr',
-    '中书省': 'zhongshu', '门下省': 'menxia', '尚书省': 'shangshu',
+    '协调智能体': 'coordinator', '规划智能体': 'planner', '审议智能体': 'reviewer',
+    '派发智能体': 'dispatcher',
+    '数据工程师': 'data_engineer', '生信工程师': 'bioinfo_engineer',
+    '临床智能体': 'clinical_expert', '报告智能体': 'reporter_agent',
 }
 
 _AGENT_LABELS = {
-    'main': '太子', 'taizi': '太子',
-    'zhongshu': '中书省', 'menxia': '门下省', 'shangshu': '尚书省',
-    'libu': '礼部', 'hubu': '户部', 'bingbu': '兵部', 'xingbu': '刑部',
-    'gongbu': '工部', 'libu_hr': '吏部', 'zaochao': '钦天监',
+    'coordinator': '协调智能体', 'planner': '规划智能体', 'reviewer': '审议智能体',
+    'dispatcher': '派发智能体',
+    'data_engineer': '数据工程师', 'bioinfo_engineer': '生信工程师',
+    'clinical_expert': '临床智能体', 'reporter_agent': '报告智能体',
 }
 
 MAX_PROGRESS_LOG = 100  # 单任务最大进展日志条数
@@ -200,9 +203,9 @@ def cmd_create(task_id, title, state, org, official, remark=None):
         tasks.insert(0, {
             "id": task_id, "title": title, "official": official,
             "org": actual_org, "state": state,
-            "now": clean_remark[:60] if remark else f"已下旨，等待{actual_org}接旨",
+            "now": clean_remark[:60] if remark else f"已创建，等待{actual_org}处理",
             "eta": "-", "block": "无", "output": "", "ac": "",
-            "flow_log": [{"at": now_iso(), "from": "皇上", "to": actual_org, "remark": clean_remark}],
+            "flow_log": [{"at": now_iso(), "from": "用户", "to": actual_org, "remark": clean_remark}],
             "updatedAt": now_iso()
         })
         return tasks
@@ -212,21 +215,21 @@ def cmd_create(task_id, title, state, org, official, remark=None):
 
 
 # ── 状态流转合法性校验 ──
-# 只允许文档定义的状态路径:
-# Pending→Taizi→Zhongshu→Menxia→Assigned→Doing→Review→Done
-# 额外: Blocked 可双向切换, Cancelled 从任意非终态可达, Next→Doing
+# GeneClaw 八大智能体状态路径:
+# Pending→Coordinator→Planning→Reviewing→Approved→Dispatching→Executing→Aggregating→Done
+# 额外: Blocked 可双向切换, Cancelled 从任意非终态可达
 _VALID_TRANSITIONS = {
-    'Pending':   {'Taizi', 'Cancelled'},
-    'Taizi':     {'Zhongshu', 'Cancelled'},
-    'Zhongshu':  {'Menxia', 'Cancelled'},
-    'Menxia':    {'Assigned', 'Zhongshu', 'Cancelled'},   # 封驳可回中书
-    'Assigned':  {'Doing', 'Next', 'Blocked', 'Cancelled'},
-    'Next':      {'Doing', 'Blocked', 'Cancelled'},
-    'Doing':     {'Review', 'Blocked', 'Cancelled'},
-    'Review':    {'Done', 'Menxia', 'Doing', 'Cancelled'},  # 可打回重审/重做
-    'Blocked':   {'Doing', 'Next', 'Assigned', 'Review', 'Cancelled'},  # 解除后回原位
-    'Done':      set(),       # 终态
-    'Cancelled': set(),       # 终态
+    'Pending':      {'Coordinator', 'Cancelled'},
+    'Coordinator':  {'Planning', 'Cancelled'},
+    'Planning':     {'Reviewing', 'Coordinator', 'Cancelled'},
+    'Reviewing':    {'Approved', 'Planning', 'Cancelled'},   # 封驳可回规划
+    'Approved':     {'Dispatching', 'Blocked', 'Cancelled'},
+    'Dispatching':  {'Executing', 'Blocked', 'Cancelled'},
+    'Executing':    {'Aggregating', 'Blocked', 'Cancelled'},
+    'Aggregating':  {'Done', 'Dispatching', 'Executing', 'Cancelled'},
+    'Blocked':      {'Dispatching', 'Executing', 'Aggregating', 'Cancelled'},
+    'Done':         set(),       # 终态
+    'Cancelled':    set(),       # 终态
 }
 
 
@@ -295,7 +298,7 @@ def cmd_done(task_id, output_path='', summary=''):
         t['now'] = summary or '任务已完成'
         t.setdefault('flow_log', []).append({
             "at": now_iso(), "from": t.get('org', '执行部门'),
-            "to": "皇上", "remark": f"✅ 完成：{summary or '任务已完成'}"
+            "to": "用户", "remark": f"✅ 完成：{summary or '任务已完成'}"
         })
         # 同步设置 outputMeta，避免依赖 refresh_live_data.py 异步补充
         if output_path:
