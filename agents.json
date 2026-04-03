@@ -33,7 +33,7 @@
     {
       "id": "dispatcher",
       "label": "派发智能体",
-      "description": "任务调度、执行监控、结果汇总",
+      "description": "任务调度、执行监控、结果汇总。广播任务给所有执行层，按顺序触发执行",
       "tier": "decision",
       "allowAgents": ["data_engineer", "bioinfo_engineer", "clinical_expert", "reporter_agent"],
       "tools": ["kanban_cli", "session_spawn"],
@@ -43,9 +43,9 @@
     {
       "id": "data_engineer",
       "label": "数据工程师",
-      "description": "VCF解析、质量控制、变异提取",
+      "description": "VCF解析、质量控制、变异提取（执行层第1步）",
       "tier": "execution",
-      "allowAgents": ["bioinfo_engineer"],
+      "allowAgents": [],
       "tools": ["pysam", "pyfaidx", "bcftools"],
       "skills": ["vcf-parser", "quality-control"],
       "soul": "agents/data_engineer/SOUL.md"
@@ -53,9 +53,9 @@
     {
       "id": "bioinfo_engineer",
       "label": "生信工程师",
-      "description": "Genos API调用、变异预测、致病性评分",
+      "description": "Genos API调用、变异预测、致病性评分（执行层第2步）",
       "tier": "execution",
-      "allowAgents": ["clinical_expert"],
+      "allowAgents": [],
       "tools": ["genos_client"],
       "skills": ["genos-api", "batch-prediction"],
       "soul": "agents/bioinfo_engineer/SOUL.md"
@@ -63,9 +63,9 @@
     {
       "id": "clinical_expert",
       "label": "临床智能体",
-      "description": "ClinVar/OMIM/gnomAD注释、临床意义增强",
+      "description": "ClinVar/OMIM/gnomAD注释、临床意义增强（执行层第3步）",
       "tier": "execution",
-      "allowAgents": ["reporter_agent"],
+      "allowAgents": [],
       "tools": ["clinvar_api", "omim_api", "gnomad_api"],
       "skills": ["database-annotation"],
       "soul": "agents/clinical_expert/SOUL.md"
@@ -73,7 +73,7 @@
     {
       "id": "reporter_agent",
       "label": "报告智能体",
-      "description": "结果排序、图表生成、报告导出",
+      "description": "结果排序、图表生成、报告导出（执行层第4步）",
       "tier": "execution",
       "allowAgents": [],
       "tools": ["echarts", "report_generator"],
@@ -115,16 +115,16 @@
         "planner": "deny",
         "reviewer": "deny",
         "data_engineer": "allow",
-        "bioinfo_engineer": "deny",
-        "clinical_expert": "deny",
-        "reporter_agent": "deny"
+        "bioinfo_engineer": "allow",
+        "clinical_expert": "allow",
+        "reporter_agent": "allow"
       },
       "data_engineer": {
         "coordinator": "deny",
         "planner": "deny",
         "reviewer": "deny",
         "dispatcher": "deny",
-        "bioinfo_engineer": "allow",
+        "bioinfo_engineer": "deny",
         "clinical_expert": "deny",
         "reporter_agent": "deny"
       },
@@ -134,7 +134,7 @@
         "reviewer": "deny",
         "dispatcher": "deny",
         "data_engineer": "deny",
-        "clinical_expert": "allow",
+        "clinical_expert": "deny",
         "reporter_agent": "deny"
       },
       "clinical_expert": {
@@ -144,7 +144,7 @@
         "dispatcher": "deny",
         "data_engineer": "deny",
         "bioinfo_engineer": "deny",
-        "reporter_agent": "allow"
+        "reporter_agent": "deny"
       },
       "reporter_agent": {
         "coordinator": "deny",
@@ -156,6 +156,10 @@
         "clinical_expert": "deny"
       }
     }
+  },
+  "executionOrder": {
+    "description": "执行层智能体按此顺序依次执行",
+    "sequence": ["data_engineer", "bioinfo_engineer", "clinical_expert", "reporter_agent"]
   },
   "stateTransitions": {
     "Pending": ["Coordinator"],

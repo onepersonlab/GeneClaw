@@ -160,13 +160,14 @@ def main():
         'reviewer':     {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-reviewer'),
                         'allowAgents': ['dispatcher', 'planner', 'coordinator']},
         'dispatcher':   {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-dispatcher'),
-                        'allowAgents': ['data_engineer']},
+                        'allowAgents': ['data_engineer', 'bioinfo_engineer', 'clinical_expert', 'reporter_agent']},
+        # 执行层（广播接收，顺序执行）
         'data_engineer':     {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-data_engineer'),
-                             'allowAgents': ['bioinfo_engineer']},
+                             'allowAgents': []},
         'bioinfo_engineer':  {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-bioinfo_engineer'),
-                             'allowAgents': ['clinical_expert']},
+                             'allowAgents': []},
         'clinical_expert':   {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-clinical_expert'),
-                             'allowAgents': ['reporter_agent']},
+                             'allowAgents': []},
         'reporter_agent':    {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-reporter_agent'),
                              'allowAgents': []},
     }
