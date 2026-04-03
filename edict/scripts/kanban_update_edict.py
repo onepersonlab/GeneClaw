@@ -6,12 +6,12 @@
 如果 API 不可用，降级回写 JSON 文件（过渡期保障）。
 
 用法（与旧版 100% 兼容）:
-  python3 kanban_update.py create JJC-20260223-012 "任务标题" Zhongshu 中书省 中书令
-  python3 kanban_update.py state JJC-20260223-012 Menxia "规划方案已提交门下省"
-  python3 kanban_update.py flow JJC-20260223-012 "中书省" "门下省" "规划方案提交审核"
-  python3 kanban_update.py done JJC-20260223-012 "/path/to/output" "任务完成摘要"
-  python3 kanban_update.py todo JJC-20260223-012 1 "实现API接口" in-progress
-  python3 kanban_update.py progress JJC-20260223-012 "正在分析需求" "1.调研✅|2.文档🔄|3.原型"
+  python3 kanban_update.py create GC-20260223-012 "任务标题" Coordinator 协调智能体 协调智能体
+  python3 kanban_update.py state GC-20260223-012 Planning "方案已提交规划智能体"
+  python3 kanban_update.py flow GC-20260223-012 "协调智能体" "规划智能体" "分拣完毕转规划"
+  python3 kanban_update.py done GC-20260223-012 "/path/to/output" "任务完成摘要"
+  python3 kanban_update.py todo GC-20260223-012 1 "实现API接口" in-progress
+  python3 kanban_update.py progress GC-20260223-012 "正在分析需求" "1.调研✅|2.文档🔄|3.原型"
 """
 
 import json
@@ -40,15 +40,15 @@ _JUNK_TITLES = {
 }
 
 STATE_ORG_MAP = {
-    'Taizi': '太子', 'Zhongshu': '中书省', 'Menxia': '门下省', 'Assigned': '尚书省',
-    'Doing': '执行中', 'Review': '尚书省', 'Done': '完成', 'Blocked': '阻塞',
+    'Coordinator': '协调智能体', 'Planning': '规划智能体', 'Reviewing': '审议智能体', 'Approved': '派发智能体',
+    'Dispatching': '派发智能体', 'Executing': '执行层', 'Aggregating': '派发智能体', 'Done': '完成', 'Blocked': '阻塞',
 }
 
 # State → Edict TaskState value 映射
 _STATE_TO_EDICT = {
-    'Taizi': 'taizi', 'Zhongshu': 'zhongshu', 'Menxia': 'menxia',
-    'Assigned': 'assigned', 'Next': 'next', 'Doing': 'doing',
-    'Review': 'review', 'Done': 'done', 'Blocked': 'blocked',
+    'Coordinator': 'coordinator', 'Planning': 'planning', 'Reviewing': 'reviewing',
+    'Approved': 'approved', 'Dispatching': 'dispatching', 'Executing': 'executing',
+    'Aggregating': 'aggregating', 'Done': 'done', 'Blocked': 'blocked',
     'Cancelled': 'cancelled', 'Pending': 'pending',
 }
 
