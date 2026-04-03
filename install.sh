@@ -1,6 +1,6 @@
 #!/bin/bash
 # ══════════════════════════════════════════════════════════════
-# 三省六部 · OpenClaw Multi-Agent System 一键安装脚本
+# GeneClaw · 基因分析多智能体系统 一键安装脚本
 # ══════════════════════════════════════════════════════════════
 set -e
 
@@ -10,10 +10,15 @@ OC_CFG="$OC_HOME/openclaw.json"
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
 
+# 决策层 + 执行层智能体列表
+DECISION_AGENTS=(coordinator planner reviewer dispatcher)
+EXECUTION_AGENTS=(data_engineer bioinfo_engineer clinical_expert reporter_agent)
+ALL_AGENTS=(${DECISION_AGENTS[@]} ${EXECUTION_AGENTS[@]})
+
 banner() {
   echo ""
   echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
-  echo -e "${BLUE}║  🏛️  三省六部 · OpenClaw Multi-Agent    ║${NC}"
+  echo -e "${BLUE}║  🧬  GeneClaw · 基因分析多智能体系统    ║${NC}"
   echo -e "${BLUE}║       安装向导                            ║${NC}"
   echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
   echo ""
@@ -92,8 +97,7 @@ backup_existing() {
 create_workspaces() {
   info "创建 Agent Workspace..."
   
-  AGENTS=(taizi zhongshu menxia shangshu hubu libu bingbu xingbu gongbu libu_hr zaochao)
-  for agent in "${AGENTS[@]}"; do
+  for agent in "${ALL_AGENTS[@]}"; do
     ws="$OC_HOME/workspace-$agent"
     mkdir -p "$ws/skills"
     if [ -f "$REPO_DIR/agents/$agent/SOUL.md" ]; then
@@ -108,13 +112,13 @@ create_workspaces() {
   done
 
   # 通用 AGENTS.md（工作协议）
-  for agent in "${AGENTS[@]}"; do
+  for agent in "${ALL_AGENTS[@]}"; do
     cat > "$OC_HOME/workspace-$agent/AGENTS.md" << 'AGENTS_EOF'
 # AGENTS.md · 工作协议
 
 1. 接到任务先回复"已接旨"。
 2. 输出必须包含：任务ID、结果、证据/文件路径、阻塞项。
-3. 需要协作时，回复尚书省请求转派，不跨部直连。
+3. 需要协作时，向上级智能体请求协调，不跨层直连。
 4. 涉及删除/外发动作必须明确标注并等待批准。
 AGENTS_EOF
   done
@@ -122,10 +126,10 @@ AGENTS_EOF
 
 # ── Step 2: 注册 Agents ─────────────────────────────────────
 register_agents() {
-  info "注册三省六部 Agents..."
+  info "注册 GeneClaw 智能体..."
 
   # 备份配置
-  cp "$OC_CFG" "$OC_CFG.bak.sansheng-$(date +%Y%m%d-%H%M%S)"
+  cp "$OC_CFG" "$OC_CFG.bak.geneclaw-$(date +%Y%m%d-%H%M%S)"
   log "已备份配置: $OC_CFG.bak.*"
 
   python3 << 'PYEOF'
@@ -134,18 +138,20 @@ import json, pathlib, sys
 cfg_path = pathlib.Path.home() / '.openclaw' / 'openclaw.json'
 cfg = json.loads(cfg_path.read_text())
 
+# GeneClaw 八大智能体架构
+# 决策层：协调 → 规划 → 审议 → 派发
+# 执行层：数据工程师、生信工程师、临床智能体、报告智能体
 AGENTS = [
-  {"id": "taizi",    "subagents": {"allowAgents": ["zhongshu"]}},
-    {"id": "zhongshu", "subagents": {"allowAgents": ["menxia", "shangshu"]}},
-    {"id": "menxia",   "subagents": {"allowAgents": ["shangshu", "zhongshu"]}},
-  {"id": "shangshu", "subagents": {"allowAgents": ["zhongshu", "menxia", "hubu", "libu", "bingbu", "xingbu", "gongbu", "libu_hr"]}},
-    {"id": "hubu",     "subagents": {"allowAgents": ["shangshu"]}},
-    {"id": "libu",     "subagents": {"allowAgents": ["shangshu"]}},
-    {"id": "bingbu",   "subagents": {"allowAgents": ["shangshu"]}},
-    {"id": "xingbu",   "subagents": {"allowAgents": ["shangshu"]}},
-    {"id": "gongbu",   "subagents": {"allowAgents": ["shangshu"]}},
-  {"id": "libu_hr",  "subagents": {"allowAgents": ["shangshu"]}},
-  {"id": "zaochao",  "subagents": {"allowAgents": []}},
+  # 决策层
+  {"id": "coordinator",  "subagents": {"allowAgents": ["planner", "reviewer", "dispatcher"]}},
+  {"id": "planner",      "subagents": {"allowAgents": ["reviewer", "coordinator"]}},
+  {"id": "reviewer",     "subagents": {"allowAgents": ["dispatcher", "planner", "coordinator"]}},
+  {"id": "dispatcher",   "subagents": {"allowAgents": ["data_engineer", "bioinfo_engineer", "clinical_expert", "reporter_agent", "reviewer"]}},
+  # 执行层
+  {"id": "data_engineer",     "subagents": {"allowAgents": ["dispatcher", "bioinfo_engineer"]}},
+  {"id": "bioinfo_engineer",  "subagents": {"allowAgents": ["dispatcher", "clinical_expert"]}},
+  {"id": "clinical_expert",   "subagents": {"allowAgents": ["dispatcher", "reporter_agent"]}},
+  {"id": "reporter_agent",    "subagents": {"allowAgents": ["dispatcher"]}},
 ]
 
 agents_cfg = cfg.setdefault('agents', {})
@@ -166,7 +172,7 @@ for ag in AGENTS:
 
 agents_cfg['list'] = agents_list
 
-# Fix #142: 清理 bindings 中的非法字段（pattern 不被 gateway 支持）
+# 清理 bindings 中的非法字段（pattern 不被 gateway 支持）
 bindings = cfg.get('bindings', [])
 cleaned = 0
 for b in bindings:
@@ -202,29 +208,30 @@ init_data() {
   # 初始任务文件
   if [ ! -f "$REPO_DIR/data/tasks_source.json" ]; then
     python3 << 'PYEOF'
-import json, pathlib
+import json, pathlib, os
+
 tasks = [
     {
-        "id": "JJC-DEMO-001",
-        "title": "🎉 系统初始化完成",
-        "official": "工部尚书",
-        "org": "工部",
+        "id": "GC-DEMO-001",
+        "title": "🎉 GeneClaw 系统初始化完成",
+        "official": "数据工程师",
+        "org": "数据工程师",
         "state": "Done",
-        "now": "三省六部系统已就绪",
+        "now": "基因分析多智能体系统已就绪",
         "eta": "-",
         "block": "无",
         "output": "",
         "ac": "系统正常运行",
         "flow_log": [
-            {"at": "2024-01-01T00:00:00Z", "from": "皇上", "to": "中书省", "remark": "下旨初始化三省六部系统"},
-            {"at": "2024-01-01T00:01:00Z", "from": "中书省", "to": "门下省", "remark": "规划方案提交审核"},
-            {"at": "2024-01-01T00:02:00Z", "from": "门下省", "to": "尚书省", "remark": "✅ 准奏"},
-            {"at": "2024-01-01T00:03:00Z", "from": "尚书省", "to": "工部", "remark": "派发：系统初始化"},
-            {"at": "2024-01-01T00:04:00Z", "from": "工部", "to": "尚书省", "remark": "✅ 完成"},
+            {"at": "2024-01-01T00:00:00Z", "from": "用户", "to": "协调智能体", "remark": "发起系统初始化"},
+            {"at": "2024-01-01T00:01:00Z", "from": "协调智能体", "to": "规划智能体", "remark": "分拣：设计方案"},
+            {"at": "2024-01-01T00:02:00Z", "from": "规划智能体", "to": "审议智能体", "remark": "方案提交审核"},
+            {"at": "2024-01-01T00:03:00Z", "from": "审议智能体", "to": "派发智能体", "remark": "✅ 准奏"},
+            {"at": "2024-01-01T00:04:00Z", "from": "派发智能体", "to": "数据工程师", "remark": "派发：系统初始化"},
+            {"at": "2024-01-01T00:05:00Z", "from": "数据工程师", "to": "派发智能体", "remark": "✅ 完成"},
         ]
     }
 ]
-import os
 data_dir = pathlib.Path(os.environ.get('REPO_DIR', '.')) / 'data'
 data_dir.mkdir(exist_ok=True)
 (data_dir / 'tasks_source.json').write_text(json.dumps(tasks, ensure_ascii=False, indent=2))
@@ -235,13 +242,12 @@ PYEOF
   log "数据目录初始化完成: $REPO_DIR/data"
 }
 
-# ── Step 3.3: 创建 data 软链接确保数据一致 (Fix #88) ─────────
+# ── Step 3.3: 创建 data 软链接确保数据一致 ─────────
 link_resources() {
   info "创建 data/scripts 软链接以确保 Agent 数据一致..."
   
-  AGENTS=(taizi zhongshu menxia shangshu hubu libu bingbu xingbu gongbu libu_hr zaochao)
   LINKED=0
-  for agent in "${AGENTS[@]}"; do
+  for agent in "${ALL_AGENTS[@]}"; do
     ws="$OC_HOME/workspace-$agent"
     mkdir -p "$ws"
 
@@ -273,23 +279,10 @@ link_resources() {
     fi
   done
 
-  # Legacy: workspace-main
-  ws_main="$OC_HOME/workspace-main"
-  if [ -d "$ws_main" ]; then
-    for target in data scripts; do
-      link_path="$ws_main/$target"
-      if [ ! -L "$link_path" ]; then
-        [ -d "$link_path" ] && mv "$link_path" "${link_path}.bak.$(date +%Y%m%d-%H%M%S)"
-        ln -s "$REPO_DIR/$target" "$link_path"
-        LINKED=$((LINKED + 1))
-      fi
-    done
-  fi
-
   log "已创建 $LINKED 个软链接（data/scripts → 项目目录）"
 }
 
-# ── Step 3.5: 设置 Agent 间通信可见性 (Fix #83) ──────────────
+# ── Step 3.5: 设置 Agent 间通信可见性 ──────────────
 setup_visibility() {
   info "配置 Agent 间消息可见性..."
   if openclaw config set tools.sessions.visibility all 2>/dev/null; then
@@ -333,7 +326,7 @@ sync_auth() {
   if [ -z "$MAIN_AUTH" ] || [ ! -f "$MAIN_AUTH" ]; then
     warn "未找到已有的 models.json 或 auth-profiles.json"
     warn "请先为任意 Agent 配置 API Key:"
-    echo "    openclaw agents add taizi"
+    echo "    openclaw agents add coordinator"
     echo "  然后重新运行 install.sh，或手动执行:"
     echo "    bash install.sh --sync-auth"
     return
@@ -342,13 +335,12 @@ sync_auth() {
   # 检查文件内容是否有效（非空 JSON）
   if ! python3 -c "import json; d=json.load(open('$MAIN_AUTH')); assert d" 2>/dev/null; then
     warn "$AUTH_FILENAME 为空或无效，请先配置 API Key:"
-    echo "    openclaw agents add taizi"
+    echo "    openclaw agents add coordinator"
     return
   fi
 
-  AGENTS=(taizi zhongshu menxia shangshu hubu libu bingbu xingbu gongbu libu_hr zaochao)
   SYNCED=0
-  for agent in "${AGENTS[@]}"; do
+  for agent in "${ALL_AGENTS[@]}"; do
     AGENT_DIR="$OC_HOME/agents/$agent/agent"
     if [ -d "$AGENT_DIR" ] || mkdir -p "$AGENT_DIR" 2>/dev/null; then
       cp "$MAIN_AUTH" "$AGENT_DIR/$AUTH_FILENAME"
@@ -375,8 +367,8 @@ build_frontend() {
     npm install --silent 2>/dev/null || npm install
     npm run build 2>/dev/null
     cd "$REPO_DIR"
-    if [ -f "$REPO_DIR/dashboard/dist/index.html" ]; then
-      log "前端构建完成: dashboard/dist/"
+    if [ -f "$REPO_DIR/edict/frontend/dist/index.html" ]; then
+      log "前端构建完成: edict/frontend/dist/"
     else
       warn "前端构建可能失败，请手动检查"
     fi
@@ -423,13 +415,13 @@ restart_gateway
 
 echo ""
 echo -e "${GREEN}╔══════════════════════════════════════════════════╗${NC}"
-echo -e "${GREEN}║  🎉  三省六部安装完成！                          ║${NC}"
+echo -e "${GREEN}║  🎉  GeneClaw 安装完成！                         ║${NC}"
 echo -e "${GREEN}╚══════════════════════════════════════════════════╝${NC}"
 echo ""
 echo "下一步："
 echo "  1. 配置 API Key（如尚未配置）:"
-echo "     openclaw agents add taizi     # 按提示输入 Anthropic API Key"
-echo "     ./install.sh                  # 重新运行以同步到所有 Agent"
+echo "     openclaw agents add coordinator  # 按提示输入 API Key"
+echo "     ./install.sh                     # 重新运行以同步到所有 Agent"
 echo "  2. 启动数据刷新循环:  bash scripts/run_loop.sh &"
 echo "  3. 启动看板服务器:    python3 \"\$REPO_DIR/dashboard/server.py\""
 echo "  4. 打开看板:          http://127.0.0.1:7891"
