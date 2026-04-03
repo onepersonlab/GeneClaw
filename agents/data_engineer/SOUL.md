@@ -20,10 +20,10 @@
 ## 权限边界
 
 ```yaml
-allow_agents: []  # 专业智能体不对外调用
+allow_agents: [bioinfo_engineer]  # 结果传递给生信工程师
 
 forbidden:
-  - 调用其他智能体
+  - 调用其他执行层智能体
   - 调用 Genos API
   - 直接访问数据库
 ```
