@@ -146,12 +146,12 @@ AGENTS = [
   {"id": "coordinator",  "subagents": {"allowAgents": ["planner", "reviewer", "dispatcher"]}},
   {"id": "planner",      "subagents": {"allowAgents": ["reviewer", "coordinator"]}},
   {"id": "reviewer",     "subagents": {"allowAgents": ["dispatcher", "planner", "coordinator"]}},
-  {"id": "dispatcher",   "subagents": {"allowAgents": ["data_engineer", "bioinfo_engineer", "clinical_expert", "reporter_agent", "reviewer"]}},
-  # 执行层
-  {"id": "data_engineer",     "subagents": {"allowAgents": ["dispatcher", "bioinfo_engineer"]}},
-  {"id": "bioinfo_engineer",  "subagents": {"allowAgents": ["dispatcher", "clinical_expert"]}},
-  {"id": "clinical_expert",   "subagents": {"allowAgents": ["dispatcher", "reporter_agent"]}},
-  {"id": "reporter_agent",    "subagents": {"allowAgents": ["dispatcher"]}},
+  {"id": "dispatcher",   "subagents": {"allowAgents": ["data_engineer"]}},
+  # 执行层（顺序链式）
+  {"id": "data_engineer",     "subagents": {"allowAgents": ["bioinfo_engineer"]}},
+  {"id": "bioinfo_engineer",  "subagents": {"allowAgents": ["clinical_expert"]}},
+  {"id": "clinical_expert",   "subagents": {"allowAgents": ["reporter_agent"]}},
+  {"id": "reporter_agent",    "subagents": {"allowAgents": []}},
 ]
 
 agents_cfg = cfg.setdefault('agents', {})

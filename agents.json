@@ -45,7 +45,7 @@
       "label": "数据工程师",
       "description": "VCF解析、质量控制、变异提取",
       "tier": "execution",
-      "allowAgents": [],
+      "allowAgents": ["bioinfo_engineer"],
       "tools": ["pysam", "pyfaidx", "bcftools"],
       "skills": ["vcf-parser", "quality-control"],
       "soul": "agents/data_engineer/SOUL.md"
@@ -55,7 +55,7 @@
       "label": "生信工程师",
       "description": "Genos API调用、变异预测、致病性评分",
       "tier": "execution",
-      "allowAgents": [],
+      "allowAgents": ["clinical_expert"],
       "tools": ["genos_client"],
       "skills": ["genos-api", "batch-prediction"],
       "soul": "agents/bioinfo_engineer/SOUL.md"
@@ -65,7 +65,7 @@
       "label": "临床智能体",
       "description": "ClinVar/OMIM/gnomAD注释、临床意义增强",
       "tier": "execution",
-      "allowAgents": [],
+      "allowAgents": ["reporter_agent"],
       "tools": ["clinvar_api", "omim_api", "gnomad_api"],
       "skills": ["database-annotation"],
       "soul": "agents/clinical_expert/SOUL.md"
@@ -115,16 +115,16 @@
         "planner": "deny",
         "reviewer": "deny",
         "data_engineer": "allow",
-        "bioinfo_engineer": "allow",
-        "clinical_expert": "allow",
-        "reporter_agent": "allow"
+        "bioinfo_engineer": "deny",
+        "clinical_expert": "deny",
+        "reporter_agent": "deny"
       },
       "data_engineer": {
         "coordinator": "deny",
         "planner": "deny",
         "reviewer": "deny",
         "dispatcher": "deny",
-        "bioinfo_engineer": "deny",
+        "bioinfo_engineer": "allow",
         "clinical_expert": "deny",
         "reporter_agent": "deny"
       },
@@ -134,7 +134,7 @@
         "reviewer": "deny",
         "dispatcher": "deny",
         "data_engineer": "deny",
-        "clinical_expert": "deny",
+        "clinical_expert": "allow",
         "reporter_agent": "deny"
       },
       "clinical_expert": {
@@ -144,7 +144,7 @@
         "dispatcher": "deny",
         "data_engineer": "deny",
         "bioinfo_engineer": "deny",
-        "reporter_agent": "deny"
+        "reporter_agent": "allow"
       },
       "reporter_agent": {
         "coordinator": "deny",

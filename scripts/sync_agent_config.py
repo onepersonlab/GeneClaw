@@ -160,15 +160,15 @@ def main():
         'reviewer':     {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-reviewer'),
                         'allowAgents': ['dispatcher', 'planner', 'coordinator']},
         'dispatcher':   {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-dispatcher'),
-                        'allowAgents': ['data_engineer', 'bioinfo_engineer', 'clinical_expert', 'reporter_agent', 'reviewer']},
+                        'allowAgents': ['data_engineer']},
         'data_engineer':     {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-data_engineer'),
-                             'allowAgents': ['dispatcher', 'bioinfo_engineer']},
+                             'allowAgents': ['bioinfo_engineer']},
         'bioinfo_engineer':  {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-bioinfo_engineer'),
-                             'allowAgents': ['dispatcher', 'clinical_expert']},
+                             'allowAgents': ['clinical_expert']},
         'clinical_expert':   {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-clinical_expert'),
-                             'allowAgents': ['dispatcher', 'reporter_agent']},
+                             'allowAgents': ['reporter_agent']},
         'reporter_agent':    {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-reporter_agent'),
-                             'allowAgents': ['dispatcher']},
+                             'allowAgents': []},
     }
     for ag_id, extra in EXTRA_AGENTS.items():
         if ag_id in seen_ids or ag_id not in ID_LABEL:
