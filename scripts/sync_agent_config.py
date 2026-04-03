@@ -161,13 +161,13 @@ def main():
                         'allowAgents': ['dispatcher', 'planner', 'coordinator']},
         'dispatcher':   {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-dispatcher'),
                         'allowAgents': ['data_engineer', 'bioinfo_engineer', 'clinical_expert', 'reporter_agent']},
-        # 执行层（广播接收，顺序执行）
+        # 执行层（广播接收 + 链式传递结果）
         'data_engineer':     {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-data_engineer'),
-                             'allowAgents': []},
+                             'allowAgents': ['bioinfo_engineer']},
         'bioinfo_engineer':  {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-bioinfo_engineer'),
-                             'allowAgents': []},
+                             'allowAgents': ['clinical_expert']},
         'clinical_expert':   {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-clinical_expert'),
-                             'allowAgents': []},
+                             'allowAgents': ['reporter_agent']},
         'reporter_agent':    {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-reporter_agent'),
                              'allowAgents': []},
     }

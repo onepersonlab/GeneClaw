@@ -147,10 +147,10 @@ AGENTS = [
   {"id": "planner",      "subagents": {"allowAgents": ["reviewer", "coordinator"]}},
   {"id": "reviewer",     "subagents": {"allowAgents": ["dispatcher", "planner", "coordinator"]}},
   {"id": "dispatcher",   "subagents": {"allowAgents": ["data_engineer", "bioinfo_engineer", "clinical_expert", "reporter_agent"]}},
-  # 执行层（顺序执行，但全部收到任务信息）
-  {"id": "data_engineer",     "subagents": {"allowAgents": []}},
-  {"id": "bioinfo_engineer",  "subagents": {"allowAgents": []}},
-  {"id": "clinical_expert",   "subagents": {"allowAgents": []}},
+  # 执行层（广播接收 + 链式传递）
+  {"id": "data_engineer",     "subagents": {"allowAgents": ["bioinfo_engineer"]}},
+  {"id": "bioinfo_engineer",  "subagents": {"allowAgents": ["clinical_expert"]}},
+  {"id": "clinical_expert",   "subagents": {"allowAgents": ["reporter_agent"]}},
   {"id": "reporter_agent",    "subagents": {"allowAgents": []}},
 ]
 
