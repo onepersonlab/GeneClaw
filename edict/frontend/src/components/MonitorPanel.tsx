@@ -127,7 +127,7 @@ export default function MonitorPanel() {
                 <span className="dc-emoji">{d.emoji}</span>
                 <div className="dc-info">
                   <div className="dc-name">{d.label}</div>
-                  <div className="dc-role">{d.role} · {d.rank}</div>
+                  <div className="dc-role">{d.role} · {d.tier}</div>
                 </div>
                 <div className="dc-status">
                   <span className={`dc-dot ${dotCls}`} />

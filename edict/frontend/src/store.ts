@@ -19,31 +19,32 @@ import {
 // ── Pipeline Definition (PIPE) ──
 
 export const PIPE = [
-  { key: 'Inbox',    dept: '皇上',   icon: '👑', action: '下旨' },
-  { key: 'Taizi',    dept: '太子',   icon: '🤴', action: '分拣' },
-  { key: 'Zhongshu', dept: '中书省', icon: '📜', action: '起草' },
-  { key: 'Menxia',   dept: '门下省', icon: '🔍', action: '审议' },
-  { key: 'Assigned', dept: '尚书省', icon: '📮', action: '派发' },
-  { key: 'Doing',    dept: '六部',   icon: '⚙️', action: '执行' },
-  { key: 'Review',   dept: '尚书省', icon: '🔎', action: '汇总' },
-  { key: 'Done',     dept: '回奏',   icon: '✅', action: '完成' },
+  { key: 'Inbox',       dept: '用户',       icon: '👑', action: '发起' },
+  { key: 'Coordinator', dept: '协调智能体', icon: '🎯', action: '分拣' },
+  { key: 'Planning',    dept: '规划智能体', icon: '📋', action: '规划' },
+  { key: 'Reviewing',   dept: '审议智能体', icon: '🔍', action: '审议' },
+  { key: 'Approved',    dept: '派发智能体', icon: '📮', action: '派发' },
+  { key: 'Executing',   dept: '执行层',     icon: '⚙️', action: '执行' },
+  { key: 'Aggregating',  dept: '派发智能体', icon: '🔎', action: '汇总' },
+  { key: 'Done',        dept: '回奏',       icon: '✅', action: '完成' },
 ] as const;
 
 export const PIPE_STATE_IDX: Record<string, number> = {
-  Inbox: 0, Pending: 0, Taizi: 1, Zhongshu: 2, Menxia: 3,
-  Assigned: 4, Doing: 5, Review: 6, Done: 7, Blocked: 5, Cancelled: 5, Next: 4,
+  Inbox: 0, Pending: 0, Coordinator: 1, Planning: 2, Reviewing: 3,
+  Approved: 4, Dispatching: 4, Executing: 5, Aggregating: 6, Done: 7,
+  Blocked: 5, Cancelled: 5, Next: 4,
 };
 
 export const DEPT_COLOR: Record<string, string> = {
-  '太子': '#e8a040', '中书省': '#a07aff', '门下省': '#6a9eff', '尚书省': '#6aef9a',
-  '礼部': '#f5c842', '户部': '#ff9a6a', '兵部': '#ff5270', '刑部': '#cc4444',
-  '工部': '#44aaff', '吏部': '#9b59b6', '皇上': '#ffd700', '回奏': '#2ecc8a',
+  '用户': '#ffd700', '协调智能体': '#e8a040', '规划智能体': '#a07aff', '审议智能体': '#6a9eff',
+  '派发智能体': '#6aef9a', '执行层': '#2ecc8a', '回奏': '#2ecc8a',
+  '数据工程师': '#ff6b6b', '生信工程师': '#4ecdc4', '临床智能体': '#45b7d1', '报告智能体': '#96ceb4',
 };
 
 export const STATE_LABEL: Record<string, string> = {
-  Inbox: '收件', Pending: '待处理', Taizi: '太子分拣', Zhongshu: '中书起草',
-  Menxia: '门下审议', Assigned: '已派发', Doing: '执行中', Review: '待审查',
-  Done: '已完成', Blocked: '阻塞', Cancelled: '已取消', Next: '待执行',
+  Inbox: '收件', Pending: '待处理', Coordinator: '协调分拣', Planning: '规划中',
+  Reviewing: '审议中', Approved: '已批准', Dispatching: '派发中', Executing: '执行中',
+  Aggregating: '汇总中', Done: '已完成', Blocked: '阻塞', Cancelled: '已取消', Next: '待执行',
 };
 
 export function deptColor(d: string): string {
@@ -52,8 +53,8 @@ export function deptColor(d: string): string {
 
 export function stateLabel(t: Task): string {
   const r = t.review_round || 0;
-  if (t.state === 'Menxia' && r > 1) return `门下审议（第${r}轮）`;
-  if (t.state === 'Zhongshu' && r > 0) return `中书修订（第${r}轮）`;
+  if (t.state === 'Reviewing' && r > 1) return `审议中（第${r}轮）`;
+  if (t.state === 'Planning' && r > 0) return `规划修订（第${r}轮）`;
   return STATE_LABEL[t.state] || t.state;
 }
 
@@ -83,24 +84,33 @@ export function getPipeStatus(t: Task): PipeStatus[] {
 
 export type TabKey =
   | 'edicts' | 'monitor' | 'officials' | 'models'
-  | 'skills' | 'sessions' | 'memorials' | 'templates' | 'morning' | 'court';
+  | 'skills' | 'sessions' | 'memorials' | 'templates' | 'morning';
 
 export const TAB_DEFS: { key: TabKey; label: string; icon: string }[] = [
-  { key: 'edicts',    label: '旨意看板', icon: '📜' },
-  { key: 'court',     label: '朝堂议政', icon: '🏛️' },
-  { key: 'monitor',   label: '省部调度', icon: '🔌' },
-  { key: 'officials', label: '官员总览', icon: '👔' },
+  { key: 'edicts',    label: '任务看板', icon: '📜' },
+  { key: 'monitor',   label: '智能体调度', icon: '🔌' },
+  { key: 'officials', label: '智能体总览', icon: '👔' },
   { key: 'models',    label: '模型配置', icon: '🤖' },
   { key: 'skills',    label: '技能配置', icon: '🎯' },
   { key: 'sessions',  label: '小任务',   icon: '💬' },
   { key: 'memorials', label: '奏折阁',   icon: '📜' },
-  { key: 'templates', label: '旨库',     icon: '📋' },
+  { key: 'templates', label: '模板库',   icon: '📋' },
   { key: 'morning',   label: '天下要闻', icon: '🌅' },
 ];
 
 // ── DEPTS for monitor ──
 
 export const DEPTS = [
+  // 决策层
+  { id: 'coordinator',  label: '协调智能体',  emoji: '🎯', role: '入口分拣',   tier: '决策层' },
+  { id: 'planner',      label: '规划智能体',  emoji: '📋', role: '方案设计',   tier: '决策层' },
+  { id: 'reviewer',     label: '审议智能体',  emoji: '🔍', role: '质量把关',   tier: '决策层' },
+  { id: 'dispatcher',   label: '派发智能体',  emoji: '📮', role: '任务调度',   tier: '决策层' },
+  // 执行层
+  { id: 'data_engineer',     label: '数据工程师',  emoji: '📊', role: 'VCF解析质控',  tier: '执行层' },
+  { id: 'bioinfo_engineer',   label: '生信工程师',  emoji: '🧬', role: 'Genos分析',    tier: '执行层' },
+  { id: 'clinical_expert',   label: '临床智能体',  emoji: '🏥', role: '数据库注释',   tier: '执行层' },
+  { id: 'reporter_agent',    label: '报告智能体',  emoji: '📈', role: '结果输出',     tier: '执行层' },
 ];
 
 // ── Templates ──
