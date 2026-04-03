@@ -1,9 +1,9 @@
 """Orchestrator Worker — 消费事件总线，驱动任务状态机。
 
 监听 topic:
-- task.created → 自动派发给太子 agent
-- task.planning.complete → 中书审议完成 → 流转门下
-- task.review.result → 门下审核 → 通过则 Assigned，退回则 Replan
+- task.created → 自动派发给协调智能体
+- task.planning.complete → 规划完成 → 流转审议
+- task.review.result → 审核完成 → 通过则 Approved，退回则 Replan
 - task.status → 处理各种状态变更
 - task.stalled → 处理停滞任务
 
@@ -123,10 +123,10 @@ class OrchestratorWorker:
             await self._on_task_stalled(payload, trace_id)
 
     async def _on_task_created(self, payload: dict, trace_id: str):
-        """任务创建 → 派发给太子 agent 起草。"""
+        """任务创建 → 派发给协调智能体处理。"""
         task_id = payload.get("task_id")
-        state = payload.get("state", "taizi")
-        agent = STATE_AGENT_MAP.get(TaskState(state), "taizi")
+        state = payload.get("state", "Coordinator")
+        agent = STATE_AGENT_MAP.get(TaskState(state), "coordinator")
 
         await self.bus.publish(
             topic=TOPIC_TASK_DISPATCH,
@@ -155,8 +155,8 @@ class OrchestratorWorker:
         # 如果新状态有对应 agent，自动派发
         agent = STATE_AGENT_MAP.get(new_state)
 
-        # 如果进入 assigned 状态，需要查找六部对应 agent
-        if new_state == TaskState.Assigned:
+        # 如果进入 Dispatching 状态，需要查找执行层对应 agent
+        if new_state == TaskState.Dispatching:
             # 从 payload 获取 assignee_org
             org = payload.get("assignee_org", "")
             agent = ORG_AGENT_MAP.get(org, agent)

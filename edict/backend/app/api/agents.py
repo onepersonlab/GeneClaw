@@ -11,15 +11,16 @@ router = APIRouter()
 
 # Agent 元信息（对应 agents/ 目录下的 SOUL.md）
 AGENT_META = {
-    "zaochao": {"name": "早朝（朝会主持）", "role": "朝会召集与议程管理", "icon": "🏛️"},
-    "shangshu": {"name": "尚书令", "role": "总协调与任务监督", "icon": "📜"},
-    "zhongshu": {"name": "中书省", "role": "起草诏令与方案规划", "icon": "✍️"},
-    "menxia": {"name": "门下省", "role": "审核与封驳", "icon": "🔍"},
-    "libu": {"name": "吏部", "role": "人事与组织管理", "icon": "👤"},
-    "hubu": {"name": "户部", "role": "财务与资源管理", "icon": "💰"},
-    "gongbu": {"name": "工部", "role": "工程与技术实施", "icon": "🔧"},
-    "xingbu": {"name": "刑部", "role": "规范与质量审查", "icon": "⚖️"},
-    "bingbu": {"name": "兵部", "role": "安全与应急响应", "icon": "🛡️"},
+    # 决策层
+    "coordinator": {"name": "协调智能体", "role": "入口分拣与意图识别", "icon": "🎯"},
+    "planner": {"name": "规划智能体", "role": "方案设计与API选择", "icon": "📋"},
+    "reviewer": {"name": "审议智能体", "role": "质量把关与封驳", "icon": "🔍"},
+    "dispatcher": {"name": "派发智能体", "role": "任务调度与结果汇总", "icon": "📮"},
+    # 执行层
+    "data_engineer": {"name": "数据工程师", "role": "VCF解析与质量控制", "icon": "📊"},
+    "bioinfo_engineer": {"name": "生信工程师", "role": "Genos分析", "icon": "🧬"},
+    "clinical_expert": {"name": "临床智能体", "role": "数据库注释", "icon": "🏥"},
+    "reporter_agent": {"name": "报告智能体", "role": "结果输出", "icon": "📈"},
 }
 
 

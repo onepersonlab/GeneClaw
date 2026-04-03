@@ -1,4 +1,4 @@
-"""Task 模型 — 三省六部任务核心表。"""
+"""Task 模型 — GeneClaw 基因分析多智能体任务核心表。"""
 from __future__ import annotations
 
 import enum
@@ -13,68 +13,75 @@ from ..db import Base
 
 
 class TaskState(str, enum.Enum):
-    """任务状态枚举 — 映射三省六部流程。"""
+    """任务状态枚举 — 映射 GeneClaw 八大智能体流程。"""
 
-    Taizi = "Taizi"
-    Zhongshu = "Zhongshu"
-    Menxia = "Menxia"
-    Assigned = "Assigned"
-    Next = "Next"
-    Doing = "Doing"
-    Review = "Review"
+    Pending = "Pending"
+    Coordinator = "Coordinator"
+    Planning = "Planning"
+    Reviewing = "Reviewing"
+    Approved = "Approved"
+    Dispatching = "Dispatching"
+    Executing = "Executing"
+    Aggregating = "Aggregating"
     Done = "Done"
     Blocked = "Blocked"
     Cancelled = "Cancelled"
-    Pending = "Pending"
 
 
 TERMINAL_STATES = {TaskState.Done, TaskState.Cancelled}
 
 STATE_TRANSITIONS = {
-    TaskState.Taizi: {TaskState.Zhongshu, TaskState.Cancelled},
-    TaskState.Zhongshu: {TaskState.Menxia, TaskState.Cancelled, TaskState.Blocked},
-    TaskState.Menxia: {TaskState.Assigned, TaskState.Zhongshu, TaskState.Cancelled},
-    TaskState.Assigned: {TaskState.Doing, TaskState.Next, TaskState.Cancelled, TaskState.Blocked},
-    TaskState.Next: {TaskState.Doing, TaskState.Cancelled},
-    TaskState.Doing: {TaskState.Review, TaskState.Done, TaskState.Blocked, TaskState.Cancelled},
-    TaskState.Review: {TaskState.Done, TaskState.Doing, TaskState.Cancelled},
+    TaskState.Pending: {TaskState.Coordinator, TaskState.Cancelled},
+    TaskState.Coordinator: {TaskState.Planning, TaskState.Cancelled},
+    TaskState.Planning: {TaskState.Reviewing, TaskState.Coordinator, TaskState.Cancelled, TaskState.Blocked},
+    TaskState.Reviewing: {TaskState.Approved, TaskState.Planning, TaskState.Cancelled},
+    TaskState.Approved: {TaskState.Dispatching, TaskState.Cancelled, TaskState.Blocked},
+    TaskState.Dispatching: {TaskState.Executing, TaskState.Cancelled, TaskState.Blocked},
+    TaskState.Executing: {TaskState.Aggregating, TaskState.Done, TaskState.Blocked, TaskState.Cancelled},
+    TaskState.Aggregating: {TaskState.Done, TaskState.Dispatching, TaskState.Executing, TaskState.Cancelled},
     TaskState.Blocked: {
-        TaskState.Taizi,
-        TaskState.Zhongshu,
-        TaskState.Menxia,
-        TaskState.Assigned,
-        TaskState.Doing,
+        TaskState.Coordinator,
+        TaskState.Planning,
+        TaskState.Reviewing,
+        TaskState.Dispatching,
+        TaskState.Executing,
     },
 }
 
 STATE_AGENT_MAP = {
-    TaskState.Taizi: "taizi",
-    TaskState.Zhongshu: "zhongshu",
-    TaskState.Menxia: "menxia",
-    TaskState.Assigned: "shangshu",
-    TaskState.Review: "shangshu",
+    TaskState.Coordinator: "coordinator",
+    TaskState.Planning: "planner",
+    TaskState.Reviewing: "reviewer",
+    TaskState.Approved: "dispatcher",
+    TaskState.Dispatching: "dispatcher",
+    TaskState.Executing: "dispatcher",
+    TaskState.Aggregating: "dispatcher",
 }
 
 ORG_AGENT_MAP = {
-    "户部": "hubu",
-    "礼部": "libu",
-    "兵部": "bingbu",
-    "刑部": "xingbu",
-    "工部": "gongbu",
-    "吏部": "libu_hr",
+    "协调智能体": "coordinator",
+    "规划智能体": "planner",
+    "审议智能体": "reviewer",
+    "派发智能体": "dispatcher",
+    "数据工程师": "data_engineer",
+    "生信工程师": "bioinfo_engineer",
+    "临床智能体": "clinical_expert",
+    "报告智能体": "reporter_agent",
 }
 
 STATE_ORG_MAP = {
-    TaskState.Taizi: "太子",
-    TaskState.Zhongshu: "中书省",
-    TaskState.Menxia: "门下省",
-    TaskState.Assigned: "尚书省",
-    TaskState.Review: "尚书省",
+    TaskState.Coordinator: "协调智能体",
+    TaskState.Planning: "规划智能体",
+    TaskState.Reviewing: "审议智能体",
+    TaskState.Approved: "派发智能体",
+    TaskState.Dispatching: "派发智能体",
+    TaskState.Executing: "执行层",
+    TaskState.Aggregating: "派发智能体",
 }
 
 
 class Task(Base):
-    """三省六部任务表。"""
+    """GeneClaw 基因分析多智能体任务表。"""
 
     __tablename__ = "tasks"
 
@@ -86,17 +93,17 @@ class Task(Base):
     state = Column(
         Enum(TaskState, name="task_state", native_enum=False, validate_strings=True),
         nullable=False,
-        default=TaskState.Taizi,
+        default=TaskState.Coordinator,
         comment="任务状态",
     )
-    assignee_org = Column(String(50), nullable=True, comment="目标执行部门")
-    creator = Column(String(50), default="emperor", comment="创建者")
+    assignee_org = Column(String(50), nullable=True, comment="目标执行智能体")
+    creator = Column(String(50), default="user", comment="创建者")
     tags = Column(JSONB, default=list, comment="标签")
     meta = Column(JSONB, default=dict, comment="扩展元数据")
 
-    # 兼容旧看板字段，避免新后端与现有前端/迁移数据脱节
-    org = Column(String(32), nullable=False, default="太子", comment="当前执行部门")
-    official = Column(String(32), default="", comment="责任官员")
+    # 兼容旧看板字段
+    org = Column(String(32), nullable=False, default="协调智能体", comment="当前执行智能体")
+    official = Column(String(32), default="", comment="责任智能体")
     now = Column(Text, default="", comment="当前进展描述")
     eta = Column(String(64), default="-", comment="预计完成时间")
     block = Column(Text, default="无", comment="阻塞原因")
@@ -110,7 +117,7 @@ class Task(Base):
     template_id = Column(String(64), default="", comment="模板ID")
     template_params = Column(JSONB, default=dict, comment="模板参数")
     ac = Column(Text, default="", comment="验收标准")
-    target_dept = Column(String(64), default="", comment="目标部门")
+    target_dept = Column(String(64), default="", comment="目标智能体")
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(
@@ -131,9 +138,9 @@ class Task(Base):
 
     @staticmethod
     def org_for_state(state: TaskState, assignee_org: str | None = None) -> str:
-        if state in {TaskState.Doing, TaskState.Next}:
-            return assignee_org or "六部"
-        return STATE_ORG_MAP.get(state, assignee_org or "太子")
+        if state in {TaskState.Executing}:
+            return assignee_org or "执行层"
+        return STATE_ORG_MAP.get(state, assignee_org or "协调智能体")
 
     def to_dict(self) -> dict[str, Any]:
         """序列化为 API 响应格式，并兼容旧 live_status 字段。"""
