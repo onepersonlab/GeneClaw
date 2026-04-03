@@ -169,7 +169,7 @@ def main():
         'clinical_expert':   {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-clinical_expert'),
                              'allowAgents': ['reporter_agent']},
         'reporter_agent':    {'model': default_model, 'workspace': str(pathlib.Path.home() / '.openclaw/workspace-reporter_agent'),
-                             'allowAgents': []},
+                             'allowAgents': ['coordinator']},
     }
     for ag_id, extra in EXTRA_AGENTS.items():
         if ag_id in seen_ids or ag_id not in ID_LABEL:

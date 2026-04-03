@@ -151,7 +151,7 @@ AGENTS = [
   {"id": "data_engineer",     "subagents": {"allowAgents": ["bioinfo_engineer"]}},
   {"id": "bioinfo_engineer",  "subagents": {"allowAgents": ["clinical_expert"]}},
   {"id": "clinical_expert",   "subagents": {"allowAgents": ["reporter_agent"]}},
-  {"id": "reporter_agent",    "subagents": {"allowAgents": []}},
+  {"id": "reporter_agent",    "subagents": {"allowAgents": ["coordinator"]}},
 ]
 
 agents_cfg = cfg.setdefault('agents', {})

@@ -73,9 +73,9 @@
     {
       "id": "reporter_agent",
       "label": "报告智能体",
-      "description": "结果排序、图表生成、报告导出（执行层第4步）",
+      "description": "结果排序、图表生成、报告导出（执行层第4步，完成后回奏协调智能体）",
       "tier": "execution",
-      "allowAgents": [],
+      "allowAgents": ["coordinator"],
       "tools": ["echarts", "report_generator"],
       "skills": ["visualization", "report-export"],
       "soul": "agents/reporter_agent/SOUL.md"
@@ -147,7 +147,7 @@
         "reporter_agent": "allow"
       },
       "reporter_agent": {
-        "coordinator": "deny",
+        "coordinator": "allow",
         "planner": "deny",
         "reviewer": "deny",
         "dispatcher": "deny",
