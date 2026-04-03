@@ -68,18 +68,18 @@ export default function TemplatePanel() {
       }
       const r = await api.createTask({
         title: cmd.substring(0, 120),
-        org: '中书省',
+        org: '规划智能体',
         targetDept: formTpl.depts[0] || '',
         priority: 'normal',
         templateId: formTpl.id,
         params,
       });
       if (r.ok) {
-        toast(`📜 ${r.taskId} 旨意已下达`, 'ok');
+        toast(`📋 ${r.taskId} 任务已创建`, 'ok');
         setFormTpl(null);
         loadAll();
       } else {
-        toast(r.error || '下旨失败', 'err');
+        toast(r.error || '创建失败', 'err');
       }
     } catch {
       toast('⚠️ 服务器连接失败', 'err');
@@ -197,7 +197,7 @@ export default function TemplatePanel() {
                     }}
                   >
                     <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>
-                      📜 将发送给中书省的旨意：
+                      📋 将发送给规划智能体的任务：
                     </div>
                     <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{previewCmd}</div>
                   </div>
@@ -208,7 +208,7 @@ export default function TemplatePanel() {
                     👁 预览旨意
                   </button>
                   <button type="submit" className="tpl-go" style={{ padding: '8px 20px', fontSize: 13 }}>
-                    📜 下旨
+                    📋 创建任务
                   </button>
                 </div>
               </form>

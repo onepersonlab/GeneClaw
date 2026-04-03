@@ -121,9 +121,9 @@ function MemorialDetailModal({
   const execLog: FlowEntry[] = [];
   const resultLog: FlowEntry[] = [];
   for (const f of fl) {
-    if (f.from === '皇上') originLog.push(f);
-    else if (f.to === '中书省' || f.from === '中书省') planLog.push(f);
-    else if (f.to === '门下省' || f.from === '门下省') reviewLog.push(f);
+    if (f.from === '用户') originLog.push(f);
+    else if (f.to === '规划智能体' || f.from === '规划智能体') planLog.push(f);
+    else if (f.to === '审议智能体' || f.from === '审议智能体') reviewLog.push(f);
     else if (f.remark && (f.remark.includes('完成') || f.remark.includes('回奏'))) resultLog.push(f);
     else execLog.push(f);
   }

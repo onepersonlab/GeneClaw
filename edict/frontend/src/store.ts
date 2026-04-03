@@ -140,8 +140,8 @@ export interface Template {
 export const TEMPLATES: Template[] = [
   {
     id: 'tpl-weekly-report', cat: '日常办公', icon: '📝', name: '周报生成',
-    desc: '基于本周看板数据和各部产出，自动生成结构化周报',
-    depts: ['户部', '礼部'], est: '~10分钟', cost: '¥0.5',
+    desc: '基于本周看板数据和各智能体产出，自动生成结构化周报',
+    depts: ['报告智能体'], est: '~10分钟', cost: '¥0.5',
     params: [
       { key: 'date_range', label: '报告周期', type: 'text', default: '本周', required: true },
       { key: 'focus', label: '重点关注（逗号分隔）', type: 'text', default: '项目进展,下周计划' },
@@ -152,7 +152,7 @@ export const TEMPLATES: Template[] = [
   {
     id: 'tpl-code-review', cat: '工程开发', icon: '🔍', name: '代码审查',
     desc: '对指定代码仓库/文件进行质量审查，输出问题清单和改进建议',
-    depts: ['兵部', '刑部'], est: '~20分钟', cost: '¥2',
+    depts: ['数据工程师'], est: '~20分钟', cost: '¥2',
     params: [
       { key: 'repo', label: '仓库/文件路径', type: 'text', required: true },
       { key: 'scope', label: '审查范围', type: 'select', options: ['全量', '增量(最近commit)', '指定文件'], default: '增量(最近commit)' },
@@ -163,7 +163,7 @@ export const TEMPLATES: Template[] = [
   {
     id: 'tpl-api-design', cat: '工程开发', icon: '⚡', name: 'API 设计与实现',
     desc: '从需求描述到 RESTful API 设计、实现、测试一条龙',
-    depts: ['中书省', '兵部'], est: '~45分钟', cost: '¥3',
+    depts: ['规划智能体', '数据工程师'], est: '~45分钟', cost: '¥3',
     params: [
       { key: 'requirement', label: '需求描述', type: 'textarea', required: true },
       { key: 'tech', label: '技术栈', type: 'select', options: ['Python/FastAPI', 'Node/Express', 'Go/Gin'], default: 'Python/FastAPI' },
@@ -174,7 +174,7 @@ export const TEMPLATES: Template[] = [
   {
     id: 'tpl-competitor', cat: '数据分析', icon: '📊', name: '竞品分析',
     desc: '爬取竞品网站数据，分析对比，生成结构化报告',
-    depts: ['兵部', '户部', '礼部'], est: '~60分钟', cost: '¥5',
+    depts: ['数据工程师', '报告智能体'], est: '~60分钟', cost: '¥5',
     params: [
       { key: 'targets', label: '竞品名称/URL（每行一个）', type: 'textarea', required: true },
       { key: 'dimensions', label: '分析维度', type: 'text', default: '产品功能,定价策略,用户评价' },
@@ -185,7 +185,7 @@ export const TEMPLATES: Template[] = [
   {
     id: 'tpl-data-report', cat: '数据分析', icon: '📈', name: '数据报告',
     desc: '对给定数据集进行清洗、分析、可视化，输出分析报告',
-    depts: ['户部', '礼部'], est: '~30分钟', cost: '¥2',
+    depts: ['数据工程师', '报告智能体'], est: '~30分钟', cost: '¥2',
     params: [
       { key: 'data_source', label: '数据源描述/路径', type: 'text', required: true },
       { key: 'questions', label: '分析问题（每行一个）', type: 'textarea' },
@@ -196,7 +196,7 @@ export const TEMPLATES: Template[] = [
   {
     id: 'tpl-blog', cat: '内容创作', icon: '✍️', name: '博客文章',
     desc: '给定主题和要求，生成高质量博客文章',
-    depts: ['礼部'], est: '~15分钟', cost: '¥1',
+    depts: ['报告智能体'], est: '~15分钟', cost: '¥1',
     params: [
       { key: 'topic', label: '文章主题', type: 'text', required: true },
       { key: 'audience', label: '目标读者', type: 'text', default: '技术人员' },
@@ -208,7 +208,7 @@ export const TEMPLATES: Template[] = [
   {
     id: 'tpl-deploy', cat: '工程开发', icon: '🚀', name: '部署方案',
     desc: '生成完整的部署检查单、Docker配置、CI/CD流程',
-    depts: ['兵部', '工部'], est: '~25分钟', cost: '¥2',
+    depts: ['数据工程师'], est: '~25分钟', cost: '¥2',
     params: [
       { key: 'project', label: '项目名称/描述', type: 'text', required: true },
       { key: 'env', label: '部署环境', type: 'select', options: ['Docker', 'K8s', 'VPS', 'Serverless'], default: 'Docker' },
@@ -219,7 +219,7 @@ export const TEMPLATES: Template[] = [
   {
     id: 'tpl-email', cat: '内容创作', icon: '📧', name: '邮件/通知文案',
     desc: '根据场景和目的，生成专业邮件或通知文案',
-    depts: ['礼部'], est: '~5分钟', cost: '¥0.3',
+    depts: ['报告智能体'], est: '~5分钟', cost: '¥0.3',
     params: [
       { key: 'scenario', label: '使用场景', type: 'select', options: ['商务邮件', '产品发布', '客户通知', '内部公告'], default: '商务邮件' },
       { key: 'purpose', label: '目的/内容', type: 'textarea', required: true },
@@ -229,12 +229,12 @@ export const TEMPLATES: Template[] = [
   },
   {
     id: 'tpl-standup', cat: '日常办公', icon: '🗓️', name: '每日站会摘要',
-    desc: '汇总各部今日进展和明日计划，生成站会摘要',
-    depts: ['尚书省'], est: '~5分钟', cost: '¥0.3',
+    desc: '汇总各智能体今日进展和明日计划，生成站会摘要',
+    depts: ['派发智能体'], est: '~5分钟', cost: '¥0.3',
     params: [
       { key: 'range', label: '汇总范围', type: 'select', options: ['今天', '最近24小时', '昨天+今天'], default: '今天' },
     ],
-    command: '汇总{range}各部工作进展和待办，生成站会摘要',
+    command: '汇总{range}各智能体工作进展和待办，生成站会摘要',
   },
 ];
 
